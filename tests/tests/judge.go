@@ -214,10 +214,15 @@ func JudgeStatsReflectAdditions(context *util.Context) util.Result {
 
 // createNamedJudge creates a judge and returns their token
 func createNamedJudge(context *util.Context, email string, name string) (string, util.Result) {
+	return createTrackJudge(context, email, name, "")
+}
+
+// createTrackJudge creates a judge assigned to a track and returns their token.
+func createTrackJudge(context *util.Context, email string, name string, track string) (string, util.Result) {
 	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
 		"name":    name,
 		"email":   email,
-		"track":   "",
+		"track":   track,
 		"notes":   "",
 		"no_send": true,
 	}, util.AdminAuth())

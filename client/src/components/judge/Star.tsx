@@ -17,6 +17,9 @@ interface StarProps {
     /* Function to run on click */
     onClick?: () => void;
 
+    /* Accessible name for the star button */
+    ariaLabel?: string;
+
     /* Additional classes */
     className?: string;
 }
@@ -24,6 +27,9 @@ interface StarProps {
 const Star = (props: StarProps) => {
     return (
         <button
+            type="button"
+            aria-label={props.ariaLabel ?? 'Star project'}
+            aria-pressed={props.active}
             className={props.className}
             disabled={props.disabled}
             onClick={() => {

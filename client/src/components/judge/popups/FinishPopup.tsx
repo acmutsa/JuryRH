@@ -72,20 +72,20 @@ const FinishPopup = (props: FinishPopupProps) => {
             />
             {props.challenges.challenges.length > 0 && (
                 <div className="text-left mt-4">
-                    <h3 className="font-bold">Opt-in challenges</h3>
+                    <h3 className="font-bold">Challenge Stars</h3>
                     <p className="text-sm text-light">
-                        Nominate this project for a challenge it entered.
+                        Star this project for each challenge you think it should win.
                     </p>
                     {props.challenges.challenges.map((challenge) => {
                         const remaining = props.challenges.remaining[challenge] ?? 0;
                         const selected = props.challengeStars.includes(challenge);
                         return (
-                            <label key={challenge} className="flex items-center gap-2 py-2 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={selected}
+                            <div key={challenge} className="flex items-center gap-2 py-2 text-sm">
+                                <Star
+                                    active={selected}
+                                    ariaLabel={`Star project for ${challenge}`}
                                     disabled={!selected && remaining === 0}
-                                    onChange={() =>
+                                    setActive={() =>
                                         props.setChallengeStars((current) =>
                                             selected
                                                 ? current.filter((name) => name !== challenge)
@@ -96,7 +96,7 @@ const FinishPopup = (props: FinishPopupProps) => {
                                 <span>
                                     {challenge} ({remaining} left of {props.challenges.limit})
                                 </span>
-                            </label>
+                            </div>
                         );
                     })}
                 </div>

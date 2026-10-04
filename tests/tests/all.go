@@ -81,6 +81,7 @@ func RunTests(context *util.Context) {
 				"Judge Does Not Repeat Projects": JudgeDoesNotRepeatProjects,
 				"Skip Project Creates Flag":      SkipProjectCreatesFlag,
 				"Judge Rank Projects":            JudgeRankProjects,
+				"Track Ranking Scores and Stars": TrackRankingScores,
 				"Star Project":                   StarProject,
 				"Opt-in Challenge Nominations":   ChallengeNominations,
 				"Judge Notes Update":             JudgeNotesUpdate,

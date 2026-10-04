@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"tests/util"
@@ -494,4 +495,123 @@ func findSeenProjectField(body string, projectID string, field string) string {
 		}
 	}
 	return ""
+}
+
+// TrackRankingScores checks partial rankings, stars, and isolation across judging pools.
+func TrackRankingScores(context *util.Context) util.Result {
+	var original struct {
+		JudgeTracks bool     `json:"judge_tracks"`
+		Tracks      []string `json:"tracks"`
+		TrackViews  []int    `json:"track_views"`
+	}
+	if err := json.Unmarshal([]byte(util.GetRequest(context.Logger, "/admin/options", util.AdminAuth())), &original); err != nil {
+		return util.NewResult(false, "Could not read original options: "+err.Error())
+	}
+	defer func() {
+		util.PostRequest(context.Logger, "/admin/tracks", util.H{"tracks": original.Tracks}, util.AdminAuth())
+		util.PostRequest(context.Logger, "/admin/track-views", util.H{"track_views": original.TrackViews}, util.AdminAuth())
+		util.PostRequest(context.Logger, "/admin/options", util.H{"judge_tracks": original.JudgeTracks}, util.AdminAuth())
+	}()
+	for _, request := range []struct {
+		path string
+		body util.H
+	}{
+		{"/admin/reset", util.H{"type": "projects"}},
+		{"/admin/tracks", util.H{"tracks": []string{"Rank A", "Rank B"}}},
+		{"/admin/track-views", util.H{"track_views": []int{2, 1}}},
+		{"/admin/options", util.H{"judge_tracks": true}},
+	} {
+		if res := util.PostRequest(context.Logger, request.path, request.body, util.AdminAuth()); !util.IsOk(res) {
+			return util.NewResult(false, "Track setup failed: "+res)
+		}
+	}
+	var ids []string
+	for i := 0; i < 3; i++ {
+		name := fmt.Sprintf("Track Ranking Project %d", i)
+		res := util.PostRequest(context.Logger, "/project/new", util.H{
+			"name": name, "description": "Track ranking test", "url": "https://example.com",
+			"try_link": "", "video_link": "", "challenge_list": "Rank A, Rank B",
+		}, util.AdminAuth())
+		if !util.IsOk(res) {
+			return util.NewResult(false, "Could not create project: "+res)
+		}
+		id, result := findProjectIDByName(context, name)
+		if !result.Success {
+			return result
+		}
+		ids = append(ids, id)
+	}
+	for i, track := range []string{"Rank A", "Rank A", "Rank B", ""} {
+		token, result := createTrackJudge(context, fmt.Sprintf("track_rank_%d@example.com", i), "Track Ranking Judge", track)
+		if !result.Success {
+			return result
+		}
+		auth := util.JudgeAuth(token)
+		for j := 0; j < 3; j++ {
+			next := util.PostRequest(context.Logger, "/judge/next", nil, auth)
+			id := util.ExtractString(next, "project_id")
+			if id == "" {
+				return util.NewResult(false, "Missing track project: "+next)
+			}
+			finish := util.PostRequest(context.Logger, "/judge/finish", util.H{"notes": "", "starred": id == ids[0]}, auth)
+			if !util.IsOk(finish) {
+				return util.NewResult(false, "Could not finish track project: "+finish)
+			}
+		}
+		status, _ := util.PostRequestWithStatus(context.Logger, "/judge/rank", util.H{"ranking": []string{"invalid-id"}}, auth)
+		if status != 400 {
+			return util.NewResult(false, "Malformed track ranking should return 400")
+		}
+		ranking := []string{ids[0], ids[1]}
+		if track == "Rank B" {
+			ranking = []string{ids[2], ids[1]}
+		}
+		res := util.PostRequest(context.Logger, "/judge/rank", util.H{"ranking": ranking}, auth)
+		if !util.IsOk(res) {
+			return util.NewResult(false, "Could not save ranking: "+res)
+		}
+		if i == 0 {
+			res = util.PutRequest(context.Logger, "/judge/star/"+ids[0], util.H{"starred": false}, auth)
+			if !util.IsOk(res) {
+				return util.NewResult(false, "Could not unstar track project: "+res)
+			}
+		}
+	}
+	var projects []struct {
+		ID          string         `json:"id"`
+		Score       int            `json:"score"`
+		Stars       int            `json:"stars"`
+		TrackScores map[string]int `json:"track_scores"`
+		TrackStars  map[string]int `json:"track_stars"`
+	}
+	body := util.GetRequest(context.Logger, "/project/list", util.AdminAuth())
+	if err := jsonUnmarshalList(body, &projects); err != nil {
+		return util.NewResult(false, "Could not decode project scores: "+err.Error())
+	}
+	if len(projects) != 3 {
+		return util.NewResult(false, "Expected three scored projects")
+	}
+	for _, project := range projects {
+		index := -1
+		for i, id := range ids {
+			if id == project.ID {
+				index = i
+			}
+		}
+		if index < 0 {
+			return util.NewResult(false, "Unexpected project in scores")
+		}
+		score := []int{2, 0, -2}[index]
+		stars := 0
+		if index == 0 {
+			stars = 1
+		}
+		if project.Score != score || project.TrackScores["Rank A"] != 2*score || project.TrackScores["Rank B"] != -score {
+			return util.NewResult(false, "Incorrect or mixed ranking scores: "+body)
+		}
+		if project.Stars != stars || project.TrackStars["Rank A"] != stars || project.TrackStars["Rank B"] != stars {
+			return util.NewResult(false, "Incorrect or mixed stars: "+body)
+		}
+	}
+	return util.ResultOk()
 }

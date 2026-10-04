@@ -551,6 +551,7 @@ const AdminSettings = () => {
                     <NavButton>Judge Login</NavButton>
                     <NavButton>Judging Parameters</NavButton>
                     <NavButton>Judging Clock and Timer</NavButton>
+                    <NavButton>Challenge Stars</NavButton>
                     <NavButton>Track Judging</NavButton>
                     <NavButton>Multi-Group Judging</NavButton>
                     <NavButton>Export Data</NavButton>
@@ -661,8 +662,6 @@ const AdminSettings = () => {
                         <SettingsButton onClick={updateMinViews}>Update Min Views</SettingsButton>
                     </FieldButton>
 
-                    <SubSection>Opt-in Challenge Nominations</SubSection>
-                    <ChallengeBlock />
                     <SubSection>Ignore Tracks</SubSection>
                     <Description>
                         Set a list of tracks to ignore when uploading projects. This will be applied
@@ -731,6 +730,15 @@ const AdminSettings = () => {
                     </FieldButton>
                 </Card>
 
+                <Card>
+                    <Section>Challenge Stars</Section>
+                    <Description>
+                        Enable stars for opt-in challenges. General judges can star eligible projects
+                        in the finish judging dialog. Challenge stars are counted separately from
+                        general and track rankings.
+                    </Description>
+                    <ChallengeBlock />
+                </Card>
                 <Card>
                     <Section>Track Judging</Section>
 

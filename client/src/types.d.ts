@@ -13,6 +13,7 @@ interface Project {
     prioritized: boolean;
     score: number;
     stars: number;
+    track_scores: { [track: string]: number };
     track_stars: { [track: string]: number };
     group: number;
     last_activity: number;

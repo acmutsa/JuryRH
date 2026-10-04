@@ -34,4 +34,8 @@ To add a track judge by QR code, an [additional dropdown](/docs/usage/admin/add-
 
 ## Judging Tracks
 
-Track judging is simpler than the main judging on purpose. All projects will be viewed exactly the number of times set in the **Track Views** setting, with judges only able to [star](/docs/usage/admin/scoring#starring) projects. The reason for this simplification is because tracks generally have a lot less projects than main judging, and Jury simply allows a random distribution of projects to be given to track judges. Track judges should get together after viewing all their assigned projects from the track and decide on a winner, focusing on the projects that are starred more.
+Track judges rank projects in order and may also star favorites, using the same judging interface as general judges. All projects will be viewed exactly the number of times set in **Track Views**.
+
+Track scores use the same Copeland counting method as [general judging](/docs/usage/admin/scoring#ranking), aggregated only from judges assigned to that track. Select a track in the admin dashboard to view and sort its **Score**, **Stars**, and **Seen** columns. Track scores and stars are separate from general judging and from other tracks. Use scores as the main metric and stars as a secondary signal during deliberation.
+
+Opt-in challenges remain star nominations from general judges, with no ordered ranking for challenges.

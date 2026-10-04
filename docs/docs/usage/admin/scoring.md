@@ -14,6 +14,8 @@ The basis of Jury's algorithm is the [Copeland Counting method](https://en.wikip
 
 The Copeland method works by breaking down rankings into pairwise comparisons. For example, if a judge has ranked projects in the order `A, B, C`, it would mean the same as the following comparisons: `(A, B), (B, C), (A, C)`, where we make `(winner, loser)` pairs. For every time a project is a "winner," it will get one point; every time it's a "loser," it will lose a point. These point values are then aggregated across all judges' rankings to form a final score for each project.
 
+Track judging uses this same method, with scores summed separately for each track. The project list API includes these totals in `track_scores`, keyed by track name; `score` remains the general judging total. Stars remain separate from ranking scores. Opt-in challenges use nominations only.
+
 This method was chosen for its simplicity while supporting uneven counts of partial rankings between different judges.
 
 ## Starring

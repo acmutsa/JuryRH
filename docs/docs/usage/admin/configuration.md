@@ -73,3 +73,9 @@ At the bottom of the settings page, there are multiple ways to reset data in Jur
 - **Delete all Projects**: This will delete all projects, judging data, and flags. It will not delete settings and judges.
 - **Delete all Judges**: This will delete all judges, judging data, and flags. It will not delete settings and projects.
 - **Drop Database**: This button will reset the database. It's pretty destructive, so obviously do not click it unless you are sure you want to COMPLETELY CLEAR Jury!!!
+
+## Challenge Stars
+
+Open **Settings → Challenge Stars** to enable star nominations for individual opt-in challenges. Challenges appear after projects with challenge entries are added. General judges see star buttons in the finish dialog only for enabled challenges that the current project entered. Each judge has a separate nomination quota per challenge (two by default). This section also shows the projects nominated and their challenge star totals; use **Refresh challenge stars** to update them.
+
+Track judges use ordered rankings and optional track stars. Challenge nominations are available during general judging.

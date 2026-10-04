@@ -52,20 +52,26 @@ const ChallengeBlock = () => {
         setSaving(false);
     };
 
-    if (challenges.length === 0) return null;
+    if (challenges.length === 0) {
+        return (
+            <p className="text-sm text-light my-2">
+                No challenges found. Add projects with challenge entries to enable challenge stars.
+            </p>
+        );
+    }
 
     return (
         <div className="border-2 border-primary bg-primary/10 rounded-md p-3 my-2">
             <h1 className="text-lg md:text-xl font-bold">Challenge List</h1>
             <p className="text-sm text-light mb-2">
-                Enable a challenge to let general judges nominate eligible projects when finishing.
+                Enable a challenge to let general judges star eligible projects when finishing.
             </p>
             <button
                 type="button"
                 onClick={refreshNominations}
                 className="text-sm text-primary underline mb-2"
             >
-                Refresh nominations
+                Refresh challenge stars
             </button>
             <ul className="space-y-3">
                 {challenges.map((challenge) => {
@@ -78,7 +84,7 @@ const ChallengeBlock = () => {
                                 <button
                                     type="button"
                                     role="switch"
-                                    aria-label={`Allow nominations for ${challenge}`}
+                                    aria-label={`Allow stars for ${challenge}`}
                                     aria-checked={enabled}
                                     disabled={saving}
                                     onClick={() => toggle(challenge)}
@@ -96,7 +102,7 @@ const ChallengeBlock = () => {
                                     {projects.map((project) => (
                                         <li key={project.project_id}>
                                             #{project.location} {project.name} — {project.stars}{' '}
-                                            {project.stars === 1 ? 'nomination' : 'nominations'}
+                                            {project.stars === 1 ? 'star' : 'stars'}
                                         </li>
                                     ))}
                                 </ul>

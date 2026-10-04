@@ -32,6 +32,8 @@ Once judges have seen projects, they will show up on the dashboard in the "seen 
 
 ![Judge Dashboard](./assets/judge-dashboard.png)
 
+Both general and track judges use this dashboard to rank projects and star favorites. Track rankings apply only to the assigned track; opt-in challenges use separate star nominations.
+
 Judges can drag and drop projects from the "Unranked Projects" section into the "Ranked Projects" section. When dragging and dropping the projects, they will be able to see the ranking placement of the project:
 
 ![Ranked Projects](./assets/ranked-projects.png)
@@ -42,7 +44,7 @@ Note that judges can also star projects from this screen. Projects' titles, loca
 
 ## Judging Projects
 
-When an organizer enables an opt-in challenge, a general judge can nominate an eligible project in the finish dialog. The dialog shows only challenges that the project entered and how many nominations the judge has left for each. The default is two nominations per judge per challenge. These nominations are separate from the overall star and cannot be changed after finishing the project.
+When an organizer enables an opt-in challenge under **Settings → Challenge Stars**, a general judge can nominate an eligible project using the star buttons in the finish dialog’s **Challenge Stars** section. The dialog shows only challenges that the project entered and how many nominations the judge has left for each. The default is two nominations per judge per challenge. These nominations are separate from the overall star and cannot be changed after finishing the project.
 
 ![Viewing Project Page](./assets/view-project.png)
 
