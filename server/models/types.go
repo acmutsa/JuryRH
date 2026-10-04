@@ -28,11 +28,9 @@ type IdRequest struct {
 }
 
 type AddJudgeRequest struct {
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Track  string `json:"track"`
-	Notes  string `json:"notes"`
-	NoSend bool   `json:"no_send"`
+	Name  string `json:"name"`
+	Track string `json:"track"`
+	Notes string `json:"notes"`
 }
 
 type AddProjectRequest struct {

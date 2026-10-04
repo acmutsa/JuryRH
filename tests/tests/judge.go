@@ -3,6 +3,7 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"tests/util"
 )
 
@@ -11,20 +12,18 @@ import (
 // AddAndDeleteJudge verifies a judge can be created and then deleted, disappearing from the list
 func AddAndDeleteJudge(context *util.Context) util.Result {
 	// Add a unique judge
-	email := "delete_test@example.com"
+	name := "Delete Test Judge"
 	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Delete Test Judge",
-		"email":   email,
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
+		"name":  "Delete Test Judge",
+		"track": "",
+		"notes": "",
 	}, util.AdminAuth())
 	if !util.IsOk(addRes) {
 		return util.NewResult(false, "Failed to add judge: "+addRes)
 	}
 
 	// Find their ID
-	id, result := findJudgeIDByEmail(context, email)
+	id, result := findJudgeIDByName(context, name)
 	if !result.Success {
 		return result
 	}
@@ -36,7 +35,7 @@ func AddAndDeleteJudge(context *util.Context) util.Result {
 	}
 
 	// Confirm they no longer appear in the list
-	_, result = findJudgeIDByEmail(context, email)
+	_, result = findJudgeIDByName(context, name)
 	if result.Success {
 		return util.NewResult(false, "Judge still appears in list after deletion")
 	}
@@ -46,19 +45,17 @@ func AddAndDeleteJudge(context *util.Context) util.Result {
 
 // EditJudge verifies that judge info can be updated and the changes persist
 func EditJudge(context *util.Context) util.Result {
-	email := "edit_test@example.com"
+	name := "Edit Test Judge"
 	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Edit Test Judge",
-		"email":   email,
-		"track":   "",
-		"notes":   "original notes",
-		"no_send": true,
+		"name":  "Edit Test Judge",
+		"track": "",
+		"notes": "original notes",
 	}, util.AdminAuth())
 	if !util.IsOk(addRes) {
 		return util.NewResult(false, "Failed to add judge for edit test: "+addRes)
 	}
 
-	id, result := findJudgeIDByEmail(context, email)
+	id, result := findJudgeIDByName(context, name)
 	if !result.Success {
 		return result
 	}
@@ -66,7 +63,6 @@ func EditJudge(context *util.Context) util.Result {
 	// Edit the judge
 	editRes := util.PutRequest(context.Logger, "/judge/"+id, util.H{
 		"name":  "Edited Judge Name",
-		"email": email,
 		"notes": "updated notes",
 	}, util.AdminAuth())
 	if !util.IsOk(editRes) {
@@ -75,52 +71,26 @@ func EditJudge(context *util.Context) util.Result {
 
 	// Verify the change
 	listRes := util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())
-	name := findJudgeFieldByEmail(listRes, email, "name")
-	if name != "Edited Judge Name" {
-		return util.NewResult(false, fmt.Sprintf("Judge name not updated: expected 'Edited Judge Name', got '%s'", name))
+	updatedName := findJudgeFieldByName(listRes, "Edited Judge Name", "name")
+	if updatedName != "Edited Judge Name" {
+		return util.NewResult(false, fmt.Sprintf("Judge name not updated: expected 'Edited Judge Name', got '%s'", updatedName))
 	}
 
 	return util.ResultOk()
 }
 
-// JudgeLoginWithValidCode verifies a judge can log in and receive a token
-func JudgeLoginWithValidCode(context *util.Context) util.Result {
-	email := "login_test@example.com"
-	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Login Test Judge",
-		"email":   email,
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
-	}, util.AdminAuth())
-	if !util.IsOk(addRes) {
-		return util.NewResult(false, "Failed to add judge: "+addRes)
+// JudgeCodeLoginDisabled checks that QR registration is the only judge entry API.
+func JudgeCodeLoginDisabled(context *util.Context) util.Result {
+	status, _ := util.PostRequestWithStatus(context.Logger, "/judge/login", util.H{"code": "12345678"}, util.DefaultAuth())
+	if status != 410 {
+		return util.NewResult(false, "Removed judge code login should return 410")
 	}
-
-	listRes := util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())
-	code := extractJudgeCode(listRes, email)
-	if code == "" {
-		return util.NewResult(false, "Could not find judge code in list")
-	}
-
-	loginRes := util.PostRequest(context.Logger, "/judge/login", util.H{"code": code}, util.DefaultAuth())
-	token := util.ExtractString(loginRes, "token")
-	if token == "" {
-		return util.NewResult(false, "Judge login did not return a token: "+loginRes)
-	}
-
 	return util.ResultOk()
-}
-
-// JudgeLoginWithInvalidCode verifies that a bad login code is rejected
-func JudgeLoginWithInvalidCode(context *util.Context) util.Result {
-	res := util.PostRequest(context.Logger, "/judge/login", util.H{"code": "DEFINITELY-NOT-A-REAL-CODE"}, util.DefaultAuth())
-	return util.AssertNotOk(res, "Login with invalid code should not succeed")
 }
 
 // JudgeWelcomeFlow verifies the read_welcome flag can be set and queried
 func JudgeWelcomeFlow(context *util.Context) util.Result {
-	token, result := createNamedJudge(context, "welcome_test@example.com", "Welcome Test Judge")
+	token, result := createNamedJudge(context, "Welcome Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -150,19 +120,17 @@ func JudgeWelcomeFlow(context *util.Context) util.Result {
 
 // HideJudge verifies that hiding a judge marks them as inactive
 func HideJudge(context *util.Context) util.Result {
-	email := "hide_test@example.com"
+	name := "Hide Test Judge"
 	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Hide Test Judge",
-		"email":   email,
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
+		"name":  "Hide Test Judge",
+		"track": "",
+		"notes": "",
 	}, util.AdminAuth())
 	if !util.IsOk(addRes) {
 		return util.NewResult(false, "Failed to add judge: "+addRes)
 	}
 
-	id, result := findJudgeIDByEmail(context, email)
+	id, result := findJudgeIDByName(context, name)
 	if !result.Success {
 		return result
 	}
@@ -174,7 +142,7 @@ func HideJudge(context *util.Context) util.Result {
 
 	// Confirm active is now false
 	listRes := util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())
-	active := findJudgeFieldByEmail(listRes, email, "active")
+	active := findJudgeFieldByName(listRes, name, "active")
 	if active != "false" {
 		return util.NewResult(false, fmt.Sprintf("Judge should be inactive after hiding, got active=%s", active))
 	}
@@ -190,11 +158,9 @@ func JudgeStatsReflectAdditions(context *util.Context) util.Result {
 
 	// Add a judge
 	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Stats Test Judge",
-		"email":   "stats_judge@example.com",
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
+		"name":  "Stats Test Judge",
+		"track": "",
+		"notes": "",
 	}, util.AdminAuth())
 	if !util.IsOk(addRes) {
 		return util.NewResult(false, "Failed to add judge: "+addRes)
@@ -212,68 +178,58 @@ func JudgeStatsReflectAdditions(context *util.Context) util.Result {
 
 // --- Helpers ---
 
-// createNamedJudge creates a judge and returns their token
-func createNamedJudge(context *util.Context, email string, name string) (string, util.Result) {
-	return createTrackJudge(context, email, name, "")
+// createNamedJudge registers a general judge through QR and returns their session token.
+func createNamedJudge(context *util.Context, name string) (string, util.Result) {
+	return createTrackJudge(context, name, "")
 }
 
-// createTrackJudge creates a judge assigned to a track and returns their token.
-func createTrackJudge(context *util.Context, email string, name string, track string) (string, util.Result) {
-	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    name,
-		"email":   email,
-		"track":   track,
-		"notes":   "",
-		"no_send": true,
-	}, util.AdminAuth())
-	if !util.IsOk(addRes) {
-		return "", util.NewResult(false, "Failed to create judge '"+name+"': "+addRes)
+// createTrackJudge registers a judge using the assigned judging pool's QR code.
+func createTrackJudge(context *util.Context, name string, track string) (string, util.Result) {
+	path := "/admin/qr"
+	if track != "" {
+		path += "/" + url.PathEscape(track)
 	}
-
-	listRes := util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())
-	code := extractJudgeCode(listRes, email)
+	codeRes := util.PostRequest(context.Logger, path, nil, util.AdminAuth())
+	code := util.ExtractString(codeRes, "qr_code")
 	if code == "" {
-		return "", util.NewResult(false, "Could not find code for judge: "+email)
+		return "", util.NewResult(false, "Could not generate QR registration code")
 	}
-
-	loginRes := util.PostRequest(context.Logger, "/judge/login", util.H{"code": code}, util.DefaultAuth())
-	token := util.ExtractString(loginRes, "token")
+	res := util.PostRequest(context.Logger, "/qr/add", util.H{"name": name, "track": track, "code": code}, util.DefaultAuth())
+	token := util.ExtractString(res, "token")
 	if token == "" {
-		return "", util.NewResult(false, "Judge login did not return a token for: "+email)
+		return "", util.NewResult(false, "QR registration did not return a token")
 	}
-
+	status, body := util.GetRequestWithStatus(context.Logger, "/judge", util.JudgeAuth(token))
+	if status != 200 || util.ExtractString(body, "name") != name || util.ExtractString(body, "track") != track {
+		return "", util.NewResult(false, "QR session did not authenticate the correct judge and track")
+	}
 	return token, util.ResultOk()
 }
 
-// findJudgeIDByEmail scans the judge list for a judge with the given email and returns their ID
-func findJudgeIDByEmail(context *util.Context, email string) (string, util.Result) {
+// findJudgeIDByName scans the judge list for a judge with the given name and returns their ID
+func findJudgeIDByName(context *util.Context, name string) (string, util.Result) {
 	listRes := util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())
-	id := findJudgeFieldByEmail(listRes, email, "id")
+	id := findJudgeFieldByName(listRes, name, "id")
 	if id == "" {
-		return "", util.NewResult(false, "Could not find judge with email '"+email+"' in judge list")
+		return "", util.NewResult(false, "Could not find judge with name '"+name+"' in judge list")
 	}
 	return id, util.ResultOk()
 }
 
-// findJudgeFieldByEmail scans a judge list JSON body and returns the value of 'field' for the judge with the given email
-func findJudgeFieldByEmail(body string, email string, field string) string {
+// findJudgeFieldByName scans a judge list JSON body and returns the value of 'field' for the judge with the given name
+func findJudgeFieldByName(body string, name string, field string) string {
 	var judges []map[string]any
 	if err := json.Unmarshal([]byte(body), &judges); err != nil {
 		return ""
 	}
 	for _, judge := range judges {
-		if judge["email"] == email {
+		if judge["name"] == name {
 			if val, ok := judge[field]; ok {
 				return fmt.Sprintf("%v", val)
 			}
 		}
 	}
 	return ""
-}
-
-// extractJudgeCode returns the login code for a judge identified by email
-func extractJudgeCode(body string, email string) string {
-	return findJudgeFieldByEmail(body, email, "code")
 }
 
 // QRCheckEmptyCodeRejected verifies that /qr/check rejects an empty code.
@@ -300,7 +256,6 @@ func QRAddEmptyCodeDoesNotCreateJudge(context *util.Context) util.Result {
 
 	res := util.PostRequest(context.Logger, "/qr/add", util.H{
 		"name":  "Attacker",
-		"email": "attacker@evil.com",
 		"notes": "",
 		"code":  "",
 	}, util.DefaultAuth())
@@ -326,7 +281,6 @@ func QRAddGarbageCodeDoesNotCreateJudge(context *util.Context) util.Result {
 
 	res := util.PostRequest(context.Logger, "/qr/add", util.H{
 		"name":  "Attacker",
-		"email": "attacker2@evil.com",
 		"notes": "",
 		"code":  "THIS-IS-NOT-A-REAL-QR-CODE",
 	}, util.DefaultAuth())
@@ -359,15 +313,39 @@ func QRValidFlowStillWorks(context *util.Context) util.Result {
 		return util.NewResult(false, "Valid QR code should pass /qr/check: "+checkRes)
 	}
 
-	addRes := util.PostRequest(context.Logger, "/qr/add", util.H{
-		"name":  "Legitimate QR Judge",
-		"email": "qr_judge@example.com",
-		"notes": "",
-		"code":  qrCode,
-		"no_send": true,
-	}, util.DefaultAuth())
-	if !util.IsOk(addRes) {
-		return util.NewResult(false, "POST /qr/add with valid code should succeed: "+addRes)
+	countBefore := countJudgesInList(util.GetRequest(context.Logger, "/judge/list", util.AdminAuth()))
+	for _, body := range []util.H{
+		{"name": "   ", "code": qrCode},
+		{"name": "Invalid Track Judge", "track": "missing-track", "code": qrCode},
+	} {
+		status, _ := util.PostRequestWithStatus(context.Logger, "/qr/add", body, util.DefaultAuth())
+		if status != 400 {
+			return util.NewResult(false, "Invalid QR registration should return 400")
+		}
+	}
+	if countJudgesInList(util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())) != countBefore {
+		return util.NewResult(false, "Invalid registration created a judge")
+	}
+	var tokens []string
+	for _, name := range []string{"Legitimate QR Judge", "Second QR Judge"} {
+		status, body := util.PostRequestWithStatus(context.Logger, "/qr/add", util.H{
+			"name": "  " + name + "  ", "code": qrCode,
+		}, util.DefaultAuth())
+		token := util.ExtractString(body, "token")
+		if status != 200 || token == "" {
+			return util.NewResult(false, "QR registration should immediately return a session")
+		}
+		tokens = append(tokens, token)
+		status, judge := util.GetRequestWithStatus(context.Logger, "/judge", util.JudgeAuth(token))
+		if status != 200 || util.ExtractString(judge, "name") != name {
+			return util.NewResult(false, "QR registration did not authenticate the trimmed judge name")
+		}
+	}
+	if tokens[0] == tokens[1] {
+		return util.NewResult(false, "QR judges must have separate sessions")
+	}
+	if countJudgesInList(util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())) != countBefore+2 {
+		return util.NewResult(false, "One registration QR should admit multiple judges")
 	}
 
 	return util.ResultOk()

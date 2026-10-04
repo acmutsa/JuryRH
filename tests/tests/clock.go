@@ -98,7 +98,7 @@ func SetAndGetJudgingTimer(context *util.Context) util.Result {
 	}
 
 	// Create a judge for judge auth
-	judgeToken, result := createNamedJudge(context, "testForTimer@example.com", "Test For Timer")
+	judgeToken, result := createNamedJudge(context, "Test For Timer")
 	if !result.Success {
 		return result
 	}
@@ -138,7 +138,7 @@ func DeliberationToggle(context *util.Context) util.Result {
 	}
 
 	// Judges should see deliberation mode on
-	token, result := createNamedJudge(context, "deliberation_test@example.com", "Deliberation Test Judge")
+	token, result := createNamedJudge(context, "Deliberation Test Judge")
 	if !result.Success {
 		return result
 	}

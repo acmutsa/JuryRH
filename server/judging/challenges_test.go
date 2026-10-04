@@ -7,7 +7,7 @@ import (
 
 func TestValidateChallengeStars(t *testing.T) {
 	project := models.NewProject("Candidate", 1, 0, "", "", "", "", []string{"Climate", "Health"})
-	judge := models.NewJudge("Judge", "judge@example.com", "", "", 0)
+	judge := models.NewJudge("Judge", "", "", 0)
 	judge.SeenProjects = []models.JudgedProject{
 		{ChallengeStars: []string{"Climate"}},
 		{ChallengeStars: []string{"Climate"}},

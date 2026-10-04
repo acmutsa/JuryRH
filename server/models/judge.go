@@ -2,8 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
-	"math/rand"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -11,9 +9,7 @@ import (
 type Judge struct {
 	Id           primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
 	Token        string               `bson:"token" json:"token"`
-	Code         string               `bson:"code" json:"code"`
 	Name         string               `bson:"name" json:"name"`
-	Email        string               `bson:"email" json:"email"`
 	Active       bool                 `bson:"active" json:"active"`
 	Track        string               `bson:"track" json:"track"`
 	Group        int64                `bson:"group" json:"group"`
@@ -45,12 +41,10 @@ type AggRanking struct {
 	Score     int64              `bson:"score" json:"score"`
 }
 
-func NewJudge(name string, email string, track string, notes string, group int64) *Judge {
+func NewJudge(name string, track string, notes string, group int64) *Judge {
 	return &Judge{
 		Token:        "",
-		Code:         RandCode(),
 		Name:         name,
-		Email:        email,
 		Active:       true,
 		Group:        group,
 		Track:        track,
@@ -66,11 +60,6 @@ func NewJudge(name string, email string, track string, notes string, group int64
 		Flagged:      []primitive.ObjectID{},
 		LastActivity: primitive.DateTime(0),
 	}
-}
-
-// RandCode generates a random 8 digit code
-func RandCode() string {
-	return fmt.Sprintf("%d", rand.Intn(90000000)+10000000)
 }
 
 func JudgeProjectFromProject(project *Project, notes string, starred bool) *JudgedProject {
@@ -123,7 +112,7 @@ func NewAggRanking(projectId primitive.ObjectID, score int64) *AggRanking {
 // NewDummyJudge creates a dummy judge that acts as a placeholder for system actions
 // This is used for things like hiding projects when absent >3 times automatically
 func NewDummyJudge() *Judge {
-	dummyJudge := NewJudge("system", "", "", "", 0)
+	dummyJudge := NewJudge("system", "", "", 0)
 	dummyJudge.Id = primitive.NilObjectID
 	return dummyJudge
 }

@@ -24,7 +24,6 @@ const UploadCSVForm = (props: UploadCSVFormProps) => {
     const [headerRow, setHeaderRow] = useState(false);
     const [error, setError] = useState<string | null>();
     const [msg, setMsg] = useState<string | null>();
-    const [noSend, setNoSend] = useState(false);
     const [isUploading, setIsUploading] = useState<boolean>(false);
     const fetchJudgeStats = useAdminStore((state) => state.fetchJudgeStats);
     const fetchProjectStats = useAdminStore((state) => state.fetchProjectStats);
@@ -56,11 +55,6 @@ const UploadCSVForm = (props: UploadCSVFormProps) => {
         formData.append('csv', file as Blob);
         formData.append('headerRow', headerRow.toString());
 
-        // Add no email send if judge
-        if (props.format === 'judge') {
-            formData.append('noSend', noSend.toString());
-        }
-
         // Make the request to the server
         const path = formatPathMap[props.format];
         const res = await postRequest<CsvData | OkResponse>(path, 'admin', formData, true);
@@ -73,7 +67,6 @@ const UploadCSVForm = (props: UploadCSVFormProps) => {
         // Reset form
         setFile(null);
         setFileName('No file chosen');
-        setNoSend(false);
         setHeaderRow(false);
         setMsg(null);
         setError(null);
@@ -91,7 +84,7 @@ const UploadCSVForm = (props: UploadCSVFormProps) => {
     const displayText =
         props.format === 'project'
             ? 'name, description, url, "Try It" link, video link, and a comma separated challenge list (in quotes)'
-            : 'name, email, track (optional), and notes (optional)';
+            : 'name, track (optional), and notes (optional)';
 
     return (
         <>
@@ -156,17 +149,10 @@ const UploadCSVForm = (props: UploadCSVFormProps) => {
                                 file,
                                 headerRow,
                                 setHeaderRow,
-                                noSend,
-                                setNoSend,
                                 format: props.format,
                             }}
                         />
                         <div>
-                            {props.format === 'judge' && (
-                                <Checkbox checked={noSend} onChange={setNoSend} className="">
-                                    Do not send an email
-                                </Checkbox>
-                            )}
                             <Checkbox checked={headerRow} onChange={setHeaderRow} className="mt-0">
                                 CSV contains a header row
                             </Checkbox>

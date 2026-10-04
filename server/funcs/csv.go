@@ -43,23 +43,17 @@ func ParseJudgeCSV(content string, hasHeader bool) ([]*models.Judge, error) {
 			return nil, err
 		}
 
-		// Make sure the record has 2+ elements (name, email, tracks [optional], notes [optional])
-		if len(record) < 2 {
-			return nil, fmt.Errorf("record does not contain 2-3 (name, email, tracks [optional] notes [optional]) elements: '%s'", strings.Join(record, ","))
+		if len(record) > 3 || strings.TrimSpace(record[0]) == "" {
+			return nil, fmt.Errorf("judge CSV requires name, track (optional), notes (optional)")
 		}
-
-		// Assign notes and tracks
-		track := ""
-		notes := ""
+		track, notes := "", ""
+		if len(record) >= 2 {
+			track = strings.TrimSpace(record[1])
+		}
 		if len(record) >= 3 {
-			track = record[2]
+			notes = record[2]
 		}
-		if len(record) >= 4 {
-			notes = record[3]
-		}
-
-		// Add judge to slice
-		judges = append(judges, models.NewJudge(record[0], record[1], track, notes, -1))
+		judges = append(judges, models.NewJudge(strings.TrimSpace(record[0]), track, notes, -1))
 	}
 
 	return judges, nil
@@ -284,11 +278,11 @@ func CreateJudgeCSV(judges []*models.Judge) []byte {
 
 	// Write the header
 	// TODO: Add judge rankings to output
-	w.Write([]string{"Name", "Email", "Notes", "Code", "Active", "ReadWelcome", "Seen", "LastActivity"})
+	w.Write([]string{"Name", "Notes", "Active", "ReadWelcome", "Seen", "LastActivity"})
 
 	// Write each judge
 	for _, judge := range judges {
-		w.Write([]string{judge.Name, judge.Email, judge.Notes, judge.Code, fmt.Sprintf("%t", judge.Active), fmt.Sprintf("%t", judge.ReadWelcome), fmt.Sprintf("%d", judge.Seen), fmt.Sprintf("%d", judge.LastActivity)})
+		w.Write([]string{judge.Name, judge.Notes, fmt.Sprintf("%t", judge.Active), fmt.Sprintf("%t", judge.ReadWelcome), fmt.Sprintf("%d", judge.Seen), fmt.Sprintf("%d", judge.LastActivity)})
 	}
 
 	// Flush the writer
@@ -305,7 +299,7 @@ func CreateJudgeRankingCSV(judges []*models.Judge) []byte {
 	w := csv.NewWriter(csvBuffer)
 
 	// Write the header
-	w.Write([]string{"Name", "Code", "Ranked", "Unranked"})
+	w.Write([]string{"Name", "Ranked", "Unranked"})
 
 	// Write each judge
 	for _, judge := range judges {
@@ -340,7 +334,7 @@ func CreateJudgeRankingCSV(judges []*models.Judge) []byte {
 		unrankedStr := util.IntToString(unranked)
 
 		// Write line to CSV
-		w.Write([]string{judge.Name, judge.Code, strings.Join(rankedStr, ","), strings.Join(unrankedStr, ",")})
+		w.Write([]string{judge.Name, strings.Join(rankedStr, ","), strings.Join(unrankedStr, ",")})
 	}
 
 	// Flush the writer

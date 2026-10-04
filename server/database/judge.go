@@ -54,17 +54,6 @@ func FindJudgeByToken(db *mongo.Database, token string) (*models.Judge, error) {
 	return &judge, err
 }
 
-// FindJudgeByCode finds a judge by their code.
-// Returns judge as nil if no judge was found.
-func FindJudgeByCode(db *mongo.Database, ctx context.Context, code string) (*models.Judge, error) {
-	var judge models.Judge
-	err := db.Collection("judges").FindOne(ctx, gin.H{"code": code}).Decode(&judge)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
-	}
-	return &judge, err
-}
-
 func FindJudgesByTrack(db *mongo.Database, ctx context.Context, track string) ([]*models.Judge, error) {
 	judges := make([]*models.Judge, 0)
 	cursor, err := db.Collection("judges").Find(ctx, gin.H{"track": track})
@@ -76,12 +65,6 @@ func FindJudgesByTrack(db *mongo.Database, ctx context.Context, track string) ([
 		return nil, err
 	}
 	return judges, nil
-}
-
-// UpdateJudgeToken updates the token of a judge
-func UpdateJudgeToken(db *mongo.Database, ctx context.Context, judgeId *primitive.ObjectID, token string) error {
-	_, err := db.Collection("judges").UpdateOne(ctx, gin.H{"_id": judgeId}, gin.H{"$set": gin.H{"token": token, "last_activity": util.Now()}})
-	return err
 }
 
 // UpdateJudgeReadWelcome updates the read_welcome field of a judge to true
@@ -221,12 +204,12 @@ func SetJudgesActive(db *mongo.Database, ids []primitive.ObjectID, active bool) 
 	return err
 }
 
-// UpdateJudgeBasicInfo updates the basic info of a judge (name, email, notes)
+// UpdateJudgeBasicInfo updates the basic info of a judge (name, notes)
 func UpdateJudgeBasicInfo(db *mongo.Database, judgeId *primitive.ObjectID, addRequest *models.AddJudgeRequest) error {
 	_, err := db.Collection("judges").UpdateOne(
 		context.Background(),
 		gin.H{"_id": judgeId},
-		gin.H{"$set": gin.H{"name": addRequest.Name, "email": addRequest.Email, "notes": addRequest.Notes}},
+		gin.H{"$set": gin.H{"name": addRequest.Name, "notes": addRequest.Notes}},
 	)
 	return err
 }

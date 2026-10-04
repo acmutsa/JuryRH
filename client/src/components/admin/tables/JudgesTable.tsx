@@ -76,9 +76,6 @@ const JudgesTable = () => {
             case JudgeSortField.Name:
                 sortFunc = (a, b) => a.name.localeCompare(b.name) * asc;
                 break;
-            case JudgeSortField.Code:
-                sortFunc = (a, b) => a.code.localeCompare(b.code) * asc;
-                break;
             case JudgeSortField.Track:
                 sortFunc = (a, b) => a.track.localeCompare(b.track) * asc;
                 break;
@@ -108,12 +105,6 @@ const JudgesTable = () => {
                     sortField={JudgeSortField.Name}
                     sortState={sortState}
                     align="left"
-                />
-                <HeaderEntry
-                    name="Code"
-                    updateSort={updateSort}
-                    sortField={JudgeSortField.Code}
-                    sortState={sortState}
                 />
                 {options.multi_group && selectedTrack === '' && (
                     <HeaderEntry

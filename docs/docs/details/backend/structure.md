@@ -18,7 +18,7 @@ This module contains function to interact with the database.
 
 ### funcs
 
-Specialized functionality such as CSV parsing and email sending.
+Specialized functionality such as CSV parsing and exports.
 
 ### judging
 

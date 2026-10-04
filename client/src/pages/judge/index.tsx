@@ -48,7 +48,7 @@ const Judge = () => {
                 navigate('/judge/welcome');
             }
 
-            // Get the name & email of the user from the server
+            // Get the judge details from the server
             const judgeRes = await getRequest<Judge>('/judge', 'judge');
             if (judgeRes.status !== 200) {
                 errorAlert(judgeRes);

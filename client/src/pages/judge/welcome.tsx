@@ -12,7 +12,6 @@ const JudgeWelcome = () => {
     const navigate = useNavigate();
     const [judge, setJudge] = useState<Judge | null>(null);
     const [checkRead, setCheckRead] = useState(false);
-    const [checkEmail, setCheckEmail] = useState(false);
     const [checkTrack, setCheckTrack] = useState(false);
 
     // Verify user is logged in and read welcome before proceeding
@@ -30,7 +29,7 @@ const JudgeWelcome = () => {
                 return;
             }
 
-            // Get the name & email of the user from the server
+            // Get the judge details of the user from the server
             const judgeRes = await getRequest<Judge>('/judge', 'judge');
             if (judgeRes.status !== 200) {
                 errorAlert(judgeRes);
@@ -44,7 +43,7 @@ const JudgeWelcome = () => {
 
     // Read the welcome message and mark that the user has read it
     const readWelcome = async () => {
-        if (!checkRead || !checkEmail) {
+        if (!checkRead || !checkTrack) {
             alert(
                 'Please read the welcome message and confirm by checking the boxes below before proceeding.'
             );
@@ -97,10 +96,6 @@ const JudgeWelcome = () => {
                     Before you continue, please acknowledge that you have read and understand the
                     above instructions.
                 </Checkbox>
-                <Checkbox checked={checkEmail} onChange={setCheckEmail}>
-                    I certify that my email is <span className="text-primary">[{judge.email}]</span>
-                    . If this is not your email, contact an organizer immediately.
-                </Checkbox>
                 <Checkbox checked={checkTrack} onChange={setCheckTrack}>
                     I am judging for the{' '}
                     <span className="text-primary">
@@ -112,7 +107,7 @@ const JudgeWelcome = () => {
                 <div className="flex justify-center py-4">
                     <Button
                         type="primary"
-                        disabled={!checkRead || !checkEmail || !checkTrack}
+                        disabled={!checkRead || !checkTrack}
                         onClick={readWelcome}
                         className="my-2"
                     >

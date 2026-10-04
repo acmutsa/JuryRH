@@ -8,7 +8,6 @@ import { twMerge } from 'tailwind-merge';
 import ActionsDropdown from '../../ActionsDropdown';
 import MoveGroupPopup from './MoveGroupPopup';
 import JudgeRanksPopup from './JudgeRanksPopup';
-import { useNavigate } from 'react-router-dom';
 
 interface JudgeRowProps {
     judge: Judge;
@@ -28,7 +27,6 @@ const JudgeRow = ({ judge, idx }: JudgeRowProps) => {
     const selected = useAdminTableStore((state) => state.selected);
     const setSelected = useAdminTableStore((state) => state.setSelected);
     const projects = useAdminStore((state) => state.projects);
-    const navigate = useNavigate();
 
     useEffect(() => {
         function closeClick(event: MouseEvent) {
@@ -64,10 +62,6 @@ const JudgeRow = ({ judge, idx }: JudgeRowProps) => {
         fetchJudges();
     };
 
-    const loginAsJudge = () => {
-        navigate(`/judge/login?code=${judge.code}`);
-    }
-
     const idToProj = (id: string) => {
         if (!id || id === '') {
             return 'None';
@@ -98,7 +92,6 @@ const JudgeRow = ({ judge, idx }: JudgeRowProps) => {
                     ></input>
                 </td>
                 <td>{judge.name}</td>
-                <td className="text-center">{judge.code}</td>
                 {options.multi_group && selectedTrack === '' && (
                     <td className="text-center">{judge.group}</td>
                 )}
@@ -109,16 +102,15 @@ const JudgeRow = ({ judge, idx }: JudgeRowProps) => {
                     <ActionsDropdown
                         open={popup}
                         setOpen={setPopup}
-                        actions={['Scores', 'Edit', judge.active ? 'Hide' : 'Unhide', 'Move Group', 'Login as Judge', 'Delete']}
+                        actions={['Scores', 'Edit', judge.active ? 'Hide' : 'Unhide', 'Move Group', 'Delete']}
                         actionFunctions={[
                             setRanksPopup.bind(null, true),
                             setEditPopup.bind(null, true),
                             hideJudge,
                             setMovePopup.bind(null, true),
-                            loginAsJudge,
                             setDeletePopup.bind(null, true),
                         ]}
-                        redIndices={[5]}
+                        redIndices={[4]}
                     />
                     <span
                         className="cursor-pointer px-1 hover:text-primary duration-150"

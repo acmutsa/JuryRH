@@ -1,8 +1,6 @@
 import JuryHeader from '../../components/JuryHeader';
 import AddJudgeStatsPanel from '../../components/admin/add-judges/AddJudgeStatsPanel';
 import JudgeQrCodes from '../../components/admin/add-judges/JudgeQrCodes';
-import NewJudgeForm from '../../components/admin/add-judges/NewJudgeForm';
-import UploadCSVForm from '../../components/admin/UploadCSVForm';
 
 const AddJudges = () => {
     return (
@@ -13,8 +11,6 @@ const AddJudges = () => {
                 <AddJudgeStatsPanel />
                 <div className="mt-8 flex flex-col w-full">
                     <JudgeQrCodes />
-                    <NewJudgeForm />
-                    <UploadCSVForm format="judge" />
                 </div>
             </div>
         </>

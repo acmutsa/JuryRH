@@ -27,13 +27,6 @@ RUN go mod download
 
 ARG MONGODB_URI=$MONGODB_URI
 ARG JURY_ADMIN_PASSWORD=$JURY_ADMIN_PASSWORD
-ARG EMAIL_HOST=$EMAIL_HOST
-ARG EMAIL_PORT=$EMAIL_PORT
-ARG EMAIL_FROM=$EMAIL_FROM
-ARG EMAIL_FROM_NAME=$EMAIL_FROM_NAME
-ARG EMAIL_USERNAME=$EMAIL_USERNAME
-ARG EMAIL_PASSWORD=$EMAIL_PASSWORD
-ARG SENDGRID_API_KEY=$SENDGRID_API_KEY
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/jury
 
@@ -43,7 +36,6 @@ FROM scratch
 COPY --from=builder /go/bin/jury .
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=client-builder /client/build /public
-COPY ./server/email.html /email.html
 
 ENV GIN_MODE=release
 EXPOSE $PORT

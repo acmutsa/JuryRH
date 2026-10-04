@@ -16,9 +16,5 @@ jobs:
         run: |
           cat > .env <<EOF
           JURY_ADMIN_PASSWORD=admin
-          EMAIL_FROM=test@example.com
-          EMAIL_HOST=smtp.example.com
-          EMAIL_USERNAME=test
-          EMAIL_PASSWORD=test
           EOF
           ./scripts/test-runner.sh

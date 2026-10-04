@@ -88,31 +88,7 @@ func AdminAuthWithJudgeEndpoint(context *util.Context) util.Result {
 
 // helper: creates a throw-away judge via the admin API and returns their login token
 func createJudgeAndGetToken(context *util.Context) (string, util.Result) {
-	addRes := util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Auth Test Judge",
-		"email":   "authtest@example.com",
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
-	}, util.AdminAuth())
-	if !util.IsOk(addRes) {
-		return "", util.NewResult(false, "Failed to create judge for auth test: "+addRes)
-	}
-
-	// Get the judge list to find the login code
-	listRes := util.GetRequest(context.Logger, "/judge/list", util.AdminAuth())
-	code := extractJudgeCode(listRes, "authtest@example.com")
-	if code == "" {
-		return "", util.NewResult(false, "Could not find judge code in judge list")
-	}
-
-	loginRes := util.PostRequest(context.Logger, "/judge/login", util.H{"code": code}, util.DefaultAuth())
-	token := util.ExtractString(loginRes, "token")
-	if token == "" {
-		return "", util.NewResult(false, "Judge login did not return a token")
-	}
-
-	return token, util.ResultOk()
+	return createNamedJudge(context, "Auth Test Judge")
 }
 
 // helper: converts a status int to a string for error messages
@@ -138,11 +114,9 @@ func EmptyBearerTokenRejected(context *util.Context) util.Result {
 	// Ensure at least one judge exists with an uninitialized (empty) token
 	// by adding a judge but NOT logging them in.
 	util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Uninitialized Token Judge",
-		"email":   "uninit_token@example.com",
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
+		"name":  "Uninitialized Token Judge",
+		"track": "",
+		"notes": "",
 	}, util.AdminAuth())
 
 	// "Bearer " — exactly 7 characters, empty string after slicing prefix
@@ -159,11 +133,9 @@ func EmptyBearerTokenRejected(context *util.Context) util.Result {
 func EmptyBearerTokenCannotAccessJudgeRoutes(context *util.Context) util.Result {
 	// Add an uninitialized judge to guarantee token "" exists in Mongo
 	util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Uninitialized Token Judge 2",
-		"email":   "uninit_token2@example.com",
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
+		"name":  "Uninitialized Token Judge 2",
+		"track": "",
+		"notes": "",
 	}, util.AdminAuth())
 
 	emptyBearerAuth := "Bearer "
@@ -208,17 +180,15 @@ func BearerPrefixOnlyRejected(context *util.Context) util.Result {
 // logged in cannot be accessed by any near-empty token variant.
 func UninitializedJudgeCannotBeImpersonated(context *util.Context) util.Result {
 	util.PostRequest(context.Logger, "/judge/new", util.H{
-		"name":    "Never Logged In Judge",
-		"email":   "never_login@example.com",
-		"track":   "",
-		"notes":   "",
-		"no_send": true,
+		"name":  "Never Logged In Judge",
+		"track": "",
+		"notes": "",
 	}, util.AdminAuth())
 
 	suspiciousTokens := []string{
 		"Bearer ",
-		"Bearer  ",    // two spaces
-		"Bearer\t",    // tab
+		"Bearer  ", // two spaces
+		"Bearer\t", // tab
 		"Bearer null",
 		"Bearer undefined",
 	}

@@ -21,13 +21,12 @@ const EditJudgePopup = (props: EditJudgePopupProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fetchJudges = useAdminStore((state) => state.fetchJudges);
     const [name, setName] = useState(props.judge.name);
-    const [email, setEmail] = useState(props.judge.email);
     const [notes, setNotes] = useState(props.judge.notes);
 
     const onSubmit = async () => {
         setIsSubmitting(true);
 
-        const data = { name, email, notes };
+        const data = { name, notes };
         const res = await putRequest(`/judge/${props.judge.id}`, 'admin', data);
         if (res.status !== 200) {
             errorAlert(res);
@@ -52,7 +51,6 @@ const EditJudgePopup = (props: EditJudgePopupProps) => {
             <h2 className="text-2xl font-bold mb-2 text-center text-primary">{props.judge.name}</h2>
             <div className="flex flex-row w-full my-3 space-x-3">
                 <TextInput label="Name" text={name} setText={setName} full />
-                <TextInput label="Email" text={email} setText={setEmail} full />
             </div>
             <TextArea label="Notes (optional)" value={notes} setValue={setNotes} />
         </ConfirmPopup>

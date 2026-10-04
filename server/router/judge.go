@@ -9,7 +9,9 @@ import (
 	"server/judging"
 	"server/models"
 	"server/util"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -43,10 +45,6 @@ func AddJudge(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
 		return
 	}
-	if judgeReq.Email == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "email is required"})
-		return
-	}
 
 	var judge *models.Judge
 
@@ -63,26 +61,7 @@ func AddJudge(ctx *gin.Context) {
 		}
 
 		// Create the judge
-		judge = models.NewJudge(judgeReq.Name, judgeReq.Email, judgeReq.Track, judgeReq.Notes, group)
-
-		// Send email if no_send is false
-		if !judgeReq.NoSend {
-			// Get hostname from request
-			hostname := util.GetFullHostname(ctx)
-
-			// Make sure email is right
-			if !funcs.CheckEmail(judge.Email) {
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid email"})
-				return errors.New("invalid email")
-			}
-
-			// Send email to judge
-			err = funcs.SendJudgeEmail(judge, hostname)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error sending judge email: " + err.Error()})
-				return err
-			}
-		}
+		judge = models.NewJudge(judgeReq.Name, judgeReq.Track, judgeReq.Notes, group)
 
 		// Insert the judge into the database
 		err = database.InsertJudge(state.Db, sc, judge)
@@ -102,67 +81,13 @@ func AddJudge(ctx *gin.Context) {
 	if track == "" {
 		track = "general"
 	}
-	state.Logger.AdminLogf("Added judge %s (%s), track: %s", judge.Name, judge.Email, track)
+	state.Logger.AdminLogf("Added judge %s, track: %s", judge.Name, track)
 	ctx.JSON(http.StatusOK, gin.H{"ok": 1})
 }
 
-type LoginJudgeRequest struct {
-	Code string `json:"code"`
-}
-
-// POST /judge/login - Endpoint to login a judge
-func LoginJudge(ctx *gin.Context) {
-	// Get the state from the context
-	state := GetState(ctx)
-
-	// Get the judge code from the request
-	var loginReq LoginJudgeRequest
-	err := ctx.BindJSON(&loginReq)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error reading request body: " + err.Error()})
-		return
-	}
-
-	var judge *models.Judge
-	var token string
-
-	// Run remaining actions in a transaction
-	err = database.WithTransaction(state.Db, func(sc mongo.SessionContext) error {
-		// Find judge by code
-		judge, err := database.FindJudgeByCode(state.Db, sc, loginReq.Code)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error finding judge in database: " + err.Error()})
-			return err
-		}
-		if judge == nil {
-			state.Logger.JudgeLogf(nil, "Invalid judge log in attempt with code %s", loginReq.Code)
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid code"})
-			return err
-		}
-
-		// Generate random 16-character token for judge
-		token, err = util.GenerateToken()
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error generating token: " + err.Error()})
-			return err
-		}
-
-		// Update judge in database with new token
-		err = database.UpdateJudgeToken(state.Db, sc, &judge.Id, token)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error updating judge in database: " + err.Error()})
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
-		return
-	}
-
-	// Send OK
-	state.Logger.JudgeLogf(judge, "Log in, assigned token %s", token)
-	ctx.JSON(http.StatusOK, gin.H{"token": token})
+// POST /judge/login - Code entry has been replaced by QR registration.
+func JudgeCodeLoginRemoved(ctx *gin.Context) {
+	ctx.JSON(http.StatusGone, gin.H{"error": "judge code login has been removed; scan the organizer's QR code"})
 }
 
 // POST /judge/auth - Check to make sure a judge is authenticated
@@ -187,7 +112,6 @@ func AddJudgesCsv(ctx *gin.Context) {
 
 	// Get the form fields from the request
 	hasHeader := ctx.PostForm("hasHeader") == "true"
-	noSend := ctx.PostForm("noSend") == "true"
 
 	// Open the file
 	f, err := file.Open()
@@ -209,28 +133,6 @@ func AddJudgesCsv(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing CSV file: " + err.Error()})
 		return
-	}
-
-	// Get hostname from request
-	hostname := util.GetFullHostname(ctx)
-
-	// Check all judge emails
-	for _, judge := range judges {
-		if !funcs.CheckEmail(judge.Email) {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid email: " + judge.Email})
-			return
-		}
-	}
-
-	// Send emails to all judges
-	if !noSend {
-		for _, judge := range judges {
-			err = funcs.SendJudgeEmail(judge, hostname)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error sending judge " + judge.Name + " email: " + err.Error()})
-				return
-			}
-		}
 	}
 
 	// Do the remaining actions in a transaction
@@ -1087,14 +989,12 @@ func MoveSelectedJudges(ctx *gin.Context) {
 }
 
 type AddJudgeFromQRRequest struct {
-	Code   string `json:"code"`
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Track  string `json:"track"`
-	NoSend *bool  `json:"no_send"`
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	Track string `json:"track"`
 }
 
-// POST /judge/qr/add - Add a judge from a QR code
+// POST /qr/add - Register and authenticate a judge from a QR code
 func AddJudgeFromQR(ctx *gin.Context) {
 	// Get the state from the context
 	state := GetState(ctx)
@@ -1107,8 +1007,11 @@ func AddJudgeFromQR(ctx *gin.Context) {
 		return
 	}
 
-	// Get hostname from request for sending emails
-	hostname := util.GetFullHostname(ctx)
+	qrReq.Name = strings.TrimSpace(qrReq.Name)
+	if qrReq.Name == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
+		return
+	}
 
 	var judge *models.Judge
 
@@ -1124,22 +1027,15 @@ func AddJudgeFromQR(ctx *gin.Context) {
 		// Make sure the code is correct and reject empty code
 		expectedCode := options.QRCode
 		if qrReq.Track != "" {
+			if !options.JudgeTracks || !slices.Contains(options.Tracks, qrReq.Track) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid judging track"})
+				return errors.New("invalid judging track")
+			}
 			expectedCode = options.TrackQRCodes[qrReq.Track]
 		}
 		if qrReq.Code == "" || expectedCode == "" || qrReq.Code != expectedCode {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid QR code"})
-			return err
-		}
-
-		// Check if the judge already exists
-		judge, err = database.FindJudgeByCode(state.Db, sc, qrReq.Code)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error finding judge in database: " + err.Error()})
-			return err
-		}
-		if judge != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "judge already exists"})
-			return err
+			return errors.New("invalid QR code")
 		}
 
 		// Determine group judge should go in
@@ -1153,23 +1049,12 @@ func AddJudgeFromQR(ctx *gin.Context) {
 		}
 
 		// Create the judge
-		judge = models.NewJudge(qrReq.Name, qrReq.Email, qrReq.Track, "", group)
+		judge = models.NewJudge(qrReq.Name, qrReq.Track, "", group)
 
-		// SEND EMAILS =============================
-
-		// Make sure email is right
-		if !funcs.CheckEmail(judge.Email) {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid email"})
+		judge.Token, err = util.GenerateToken()
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error generating judge token"})
 			return err
-		}
-
-		// Send email to judge
-		if qrReq.NoSend == nil || !*qrReq.NoSend {
-			err = funcs.SendJudgeEmail(judge, hostname)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error sending judge email: " + err.Error()})
-				return err
-			}
 		}
 
 		// Insert the judge into the database
@@ -1196,8 +1081,8 @@ func AddJudgeFromQR(ctx *gin.Context) {
 	if qrReq.Track != "" {
 		track = ", track " + qrReq.Track
 	}
-	state.Logger.AdminLogf("Added judge %s (%s) from QR code%s", judge.Name, judge.Email, track)
-	ctx.JSON(http.StatusOK, gin.H{"ok": 1})
+	state.Logger.AdminLogf("Added judge %s from QR code%s", judge.Name, track)
+	ctx.JSON(http.StatusOK, gin.H{"ok": 1, "token": judge.Token})
 }
 
 // GET /judge/deliberation - Get the status of the deliberation

@@ -33,8 +33,6 @@ interface PublicProject {
 interface Judge {
     id: string;
     name: string;
-    code: string;
-    email: string;
     track: string;
     notes: string;
     read_welcome: boolean;
@@ -196,8 +194,6 @@ interface CSVFormState {
     file: File | null;
     headerRow: boolean;
     setHeaderRow: React.Dispatch<React.SetStateAction<boolean>>;
-    noSend: boolean;
-    setNoSend: React.Dispatch<React.SetStateAction<boolean>>;
     format: 'project' | 'judge' | 'devpost';
 }
 

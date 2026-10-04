@@ -32,7 +32,7 @@ func ChallengeNominations(context *util.Context) util.Result {
 		return util.NewResult(false, "Could not enable challenge: "+setOption)
 	}
 	defer util.PostRequest(context.Logger, "/admin/options", util.H{"opt_in_challenges": []string{}}, util.AdminAuth())
-	token, result := createNamedJudge(context, "challenge_test@example.com", "Challenge Test Judge")
+	token, result := createNamedJudge(context, "Challenge Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -141,7 +141,7 @@ func JudgingStandardPath(context *util.Context) util.Result {
 	}
 
 	// Create a judge and log in
-	token, result := createNamedJudge(context, "judging_flow@example.com", "Judging Flow Judge")
+	token, result := createNamedJudge(context, "Judging Flow Judge")
 	if !result.Success {
 		return result
 	}
@@ -201,7 +201,7 @@ func JudgeDoesNotRepeatProjects(context *util.Context) util.Result {
 		}, util.AdminAuth())
 	}
 
-	token, result := createNamedJudge(context, "no_repeat@example.com", "No Repeat Judge")
+	token, result := createNamedJudge(context, "No Repeat Judge")
 	if !result.Success {
 		return result
 	}
@@ -253,7 +253,7 @@ func SkipProjectCreatesFlag(context *util.Context) util.Result {
 		"challenge_list": "",
 	}, util.AdminAuth())
 
-	token, result := createNamedJudge(context, "skip_test@example.com", "Skip Test Judge")
+	token, result := createNamedJudge(context, "Skip Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -319,7 +319,7 @@ func JudgeRankProjects(context *util.Context) util.Result {
 		projectIDs = append(projectIDs, id)
 	}
 
-	token, result := createNamedJudge(context, "rank_test@example.com", "Rank Test Judge")
+	token, result := createNamedJudge(context, "Rank Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -364,7 +364,7 @@ func StarProject(context *util.Context) util.Result {
 		"challenge_list": "",
 	}, util.AdminAuth())
 
-	token, result := createNamedJudge(context, "star_test@example.com", "Star Test Judge")
+	token, result := createNamedJudge(context, "Star Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -414,7 +414,7 @@ func JudgeNotesUpdate(context *util.Context) util.Result {
 		"challenge_list": "",
 	}, util.AdminAuth())
 
-	token, result := createNamedJudge(context, "notes_test@example.com", "Notes Test Judge")
+	token, result := createNamedJudge(context, "Notes Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -455,7 +455,7 @@ func JudgeNextWithNoActiveProjects(context *util.Context) util.Result {
 	}
 
 	// Create a fresh judge
-	token, result := createNamedJudge(context, "empty_test@example.com", "Empty Test Judge")
+	token, result := createNamedJudge(context, "Empty Test Judge")
 	if !result.Success {
 		return result
 	}
@@ -542,7 +542,7 @@ func TrackRankingScores(context *util.Context) util.Result {
 		ids = append(ids, id)
 	}
 	for i, track := range []string{"Rank A", "Rank A", "Rank B", ""} {
-		token, result := createTrackJudge(context, fmt.Sprintf("track_rank_%d@example.com", i), "Track Ranking Judge", track)
+		token, result := createTrackJudge(context, fmt.Sprintf("Track Ranking Judge %d", i), track)
 		if !result.Success {
 			return result
 		}

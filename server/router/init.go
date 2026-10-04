@@ -51,7 +51,7 @@ func NewRouter(db *mongo.Database, logger *logging.Logger) *gin.Engine {
 		MaxAge:           12 * 3600,
 	}))
 
-	// Rate limit login requests
+	// Rate limit judge registration requests
 	router.Use(rateLimit(limiter))
 
 	// Create router groups for judge and admins
@@ -69,7 +69,7 @@ func NewRouter(db *mongo.Database, logger *logging.Logger) *gin.Engine {
 	defaultRouter.GET("/", Heartbeat)
 
 	// Login routes
-	defaultRouter.POST("/judge/login", LoginJudge)
+	defaultRouter.POST("/judge/login", JudgeCodeLoginRemoved)
 	defaultRouter.POST("/admin/login", LoginAdmin)
 	judgeRouter.POST("/judge/auth", JudgeAuthenticated)
 	adminRouter.POST("/admin/auth", AdminAuthenticated)
@@ -203,11 +203,11 @@ func useVar(key string, v any) gin.HandlerFunc {
 }
 
 // rateLimit is a middleware that limits the number of requests per minute
-// for the judge login endpoint
+// for the judge QR registration endpoint
 func rateLimit(limiter *Limiter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Check for /judge/login endpoint
-		if ctx.Request.URL.Path != "/api/judge/login" {
+		// Check for /qr/add endpoint
+		if ctx.Request.URL.Path != "/api/qr/add" {
 			ctx.Next()
 			return
 		}

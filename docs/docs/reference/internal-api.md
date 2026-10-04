@@ -26,7 +26,7 @@ All routes are listed in `server/router/init.go` with their respective handlers.
 | Path                                                   | Method | Auth  | Description                                  |
 | ------------------------------------------------------ | ------ | ----- | -------------------------------------------- |
 | [/](#get-)                                             | GET    |       | Heartbeat route                              |
-| [/judge/login](#post-judgelogin)                       | POST   |       | Login judge                                  |
+| [/judge/login](#post-judgelogin)                       | POST   |       | Retired code login (HTTP 410)                |
 | [/admin/login](#post-adminlogin)                       | POST   |       | Log into the admin dashboard                 |
 | [/judge/auth](#post-judgeauth)                         | POST   | judge | Checks to see if judge is logged in          |
 | [/admin/auth](#post-adminauth)                         | POST   | admin | Checks to see if admin is logged in          |
@@ -148,24 +148,7 @@ Heartbeat route
 
 ### POST /judge/login
 
-Login judge
-
--   **Auth**: none
--   **Body**: JSON
-
-```json
-{
-    "code": "String | login code"
-}
-```
-
--   **Response**: JSON
-
-```json
-{
-    "token": "String | judge login token"
-}
-```
+Retired. Returns HTTP 410 with a JSON error directing the judge to scan the organizer’s QR code. Judge sessions are issued by [POST /qr/add](#post-qradd).
 
 ### POST /admin/login
 
@@ -208,7 +191,6 @@ Add a new judge
 ```json
 {
     "name": "String",
-    "email": "String",
     "notes": "String"
 }
 ```
@@ -223,7 +205,6 @@ Add judges by CSV
 -   **Body**: FormData
     -   `csv`: CSV file
     -   `hasHeader`: Boolean, true if CSV has a header
-    -   `noSend`: Don't send email to judge if true
 -   **Response**: OK response
 
 ### GET /judge/list
@@ -238,9 +219,7 @@ Get list of all judges
     {
         "id": "ObjectId",
         "token": "String",
-        "code": "String",
-        "name": "String",
-        "email": "String",
+            "name": "String",
         "active": "bool",
         "track": "String",
         "group": "String",
@@ -284,7 +263,6 @@ Edit judge info
 ```json
 {
     "name": "String",
-    "email": "String",
     "notes": "String"
 }
 ```
@@ -382,21 +360,23 @@ Checks if track QR code is correct
 
 ### POST /qr/add
 
-Add judge from QR code
+Register and authenticate a judge using the organizer’s current QR code.
 
--   **Auth**: none
--   **Body**: JSON
+- **Auth**: none
+- **Body**: JSON
 
 ```json
 {
-    "name": "String",
-    "email": "String",
-    "notes": "String",
-    "code": "String | QR code token"
+    "name": "String | required, trimmed and nonempty",
+    "track": "String | empty for general judging",
+    "code": "String | QR registration token"
 }
 ```
 
--   **Response**: OK response
+- **Response**: `{"ok": 1, "token": "String | judge session token"}`
+- **Errors**: HTTP 400 for an empty name, empty/incorrect QR code, or a disabled/unknown track. No judge is created on validation failure.
+
+The client saves the returned session token and opens the welcome screen. Judge records and admin creation/edit requests no longer contain an email field. The admin-only judge CSV provisioning API accepts `name, track (optional), notes (optional)`; judge exports omit email. The Add Judges UI provides QR registration only.
 
 ## Admin Panel (Projects) Routes
 
@@ -1088,9 +1068,7 @@ Gets judge from token cookie
 {
     "id": "ObjectId",
     "token": "String",
-    "code": "String",
     "name": "String",
-    "email": "String",
     "active": "bool",
     "track": "String",
     "group": "String",

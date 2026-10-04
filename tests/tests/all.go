@@ -43,11 +43,10 @@ func RunTests(context *util.Context) {
 		{
 			Name: "Judge CRUD",
 			Tests: map[string]func(*util.Context) util.Result{
-				"Judge Login With Valid Code":               JudgeLoginWithValidCode,
-				"Judge Login With Invalid Code":             JudgeLoginWithInvalidCode,
 				"Add And Delete Judge":                      AddAndDeleteJudge,
 				"Edit Judge":                                EditJudge,
 				"Hide Judge":                                HideJudge,
+				"Judge Code Login Disabled":                 JudgeCodeLoginDisabled,
 				"Judge Welcome Flow":                        JudgeWelcomeFlow,
 				"Judge Stats Reflect Additions":             JudgeStatsReflectAdditions,
 				"QR Check Empty Code Rejected":              QRCheckEmptyCodeRejected,

@@ -93,8 +93,8 @@ const router = createBrowserRouter([
         path: '/add-self/done',
         element: (
             <Info>
-                Thanks for adding yourself to the system! You should recieve an email soon with your
-                judging login info. You can safely close this tab.
+                Registration now signs you in immediately. Open the judging portal to continue,
+                or scan the organizer’s QR code to join.
             </Info>
         ),
     },

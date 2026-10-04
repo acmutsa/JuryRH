@@ -54,37 +54,7 @@ Click on "edit" next to "jury-service" and fill in the environmental variables a
 -   `JURY_ADMIN_PASSWORD` - Password for the admin portal (suggestion: use 2 random words)
 -   `MONGODB_URI` - URI of MongoDB Atlas instance (see step 0)
 
-### Email Hosting
-
-Jury needs to send emails to judges with their judging code. Each judge will receive an email when you add them, so if you have 100 judges, then you will need to send out 100 emails (but you should account for at least double to handle situations where you have to re-send emails or try different emails for judges). There are 3 ways we recommend hosting emails:
-
-1. The first method is through [**Gmail SMTP**](https://support.google.com/a/answer/176600?hl=en#gmail-smtp-option), which means that you simply send emails through your personal `xxx@gmail.com` email. This is completely free but may face issues with sending limits (2000/day), spam filtering, and email sending performance.
-2. The second method is through [**Sendgrid**](https://sendgrid.com/en-us). Many organizations already use Sendgrid, so this may be convenient for you. Note that you need to enable billing and [upgrade your account](https://sendgrid.com/en-us/marketing/sendgrid-services-cro) if you want to send more than 100 emails in a day. Sendgrid is nice because it's a fixed price up to a high email limit and has a separate API for sending emails outside of SMTP.
-3. The final option that has been tested is [**AWS SES**](https://aws.amazon.com/ses/). This is a paid service also used by many organizations. The pricing for AWS SES is per 1000 emails, so it may be more expensive depending on how many emails you send. We use the SMTP protocol to call AWS SES's service too.
-
-You will have to fill out specific environmental variables for each service:
-
-If using **Gmail SMTP**:
-
--   `EMAIL_HOST` = smtp.gmail.com
--   `EMAIL_FROM` = gmail username
--   `EMAIL_USERNAME` = gmail username
--   `EMAIL_PASSWORD` = [google app password](https://support.google.com/accounts/answer/185833?hl=en#app-passwords)
-
-If using **SendGrid**:
-
--   `SENDGRID_API_KEY` = [API key](https://docs.sendgrid.com/ui/account-and-settings/api-keys) provided by SendGrid
--   `EMAIL_FROM` = email to send from
--   `EMAIL_FROM_NAME` = display name of sender
-
-If using [**AWS SES**](https://docs.aws.amazon.com/ses/latest/dg/smtp-credentials.html):
-
--   `EMAIL_HOST` = email-smtp.\<region\>.amazonaws.com
--   `EMAIL_FROM` = verified email to send from
--   `EMAIL_USERNAME` = SES SMTP username
--   `EMAIL_PASSWORD` = SES SMTP password
-
-Make sure you **do not change the pre-filled fields**. You may leave any unused fields blank (ie. if you are using Sendgrid, you do not need to fill out the `EMAIL_PASSWORD` field).
+Judges join by scanning an organizer’s QR code and entering their name. No mail service or mail credentials are required.
 
 ## Step 4. App Name
 

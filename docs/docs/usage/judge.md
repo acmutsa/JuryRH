@@ -10,19 +10,9 @@ Jury is designed to be as easy as possible for judges. It provides for a seamles
 
 ## Initial Onboarding
 
-When judges are [added to the system](/docs/usage/admin/add-judges), they will recieve an email with the subject line **Jury Judging Platform [VITE_JURY_NAME env]** and should look like the following:
+Scan the [judging QR code](/docs/usage/admin/add-judges) provided by an organizer and enter your name. Registration signs you in immediately and opens the welcome screen. Read the instructions and confirm your judging track before continuing. Track judges should scan the QR code for their assigned track.
 
-![Jury Email](./assets/email.png)
-
-Pressing the button on the email brings the judge to the login page, with the code automatically filled in. If the button does not work, the judge can also manually go to the login page (either with the link on the email or given by the organizers) and enter the code that is shown on the email. The login box looks like the following:
-
-![Judge Login Page](./assets/login.png)
-
-Click the login button to start judging. The judge will be taken to a **welcome page**. This welcome page gives a brief summary of how judging on Jury will work and provide a few checkboxes for judges to check:
-
-![Welcome Form Checkboxes](./assets/checkboxes.png)
-
-The most important points are for judges to check that their **email** and **track** are correct. If they have the wrong email or track, their results could create inconsistencies with the judging and audit systems. Confirming these checkboxes and continuing brings them to their main judging dashboard. Note that judges will not be shown that welcome screen on subsequent logins.
+Returning judges can reopen the judging portal in the same browser while their session is active. There is no email verification or code entry screen.
 
 ## Judging Dashboard
 

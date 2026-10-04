@@ -82,3 +82,20 @@ func TestParseDevpostProjectsOptionalLinks(t *testing.T) {
 		t.Fatalf("expected one project with empty optional links, got %+v", projects)
 	}
 }
+
+func TestParseJudgeCSVWithoutEmail(t *testing.T) {
+	judges, err := ParseJudgeCSV("Name,Track,Notes\nAlex,Design,Panel lead\nSam,,\n", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(judges) != 2 || judges[0].Name != "Alex" || judges[0].Track != "Design" || judges[0].Notes != "Panel lead" || judges[1].Track != "" {
+		t.Fatalf("unexpected judges: %+v", judges)
+	}
+	if _, err := ParseJudgeCSV("   ,Design,\n", false); err == nil {
+		t.Fatal("blank judge name accepted")
+	}
+	csv := CreateJudgeCSV(judges)
+	if strings.Contains(string(csv), "Email") {
+		t.Fatal("export still contains email column")
+	}
+}

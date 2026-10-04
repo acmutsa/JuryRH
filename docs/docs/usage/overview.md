@@ -20,12 +20,7 @@ To ensure Jury works correctly, you should set it up a day or two in advance. Cr
 
 ## Judges Enter
 
-Fast forward to Sunday. Project are getting finished up, and judges are coming through the door! Once judges are checked in, you can put them into the Jury system -- in one of two ways:
-
-1. If you already have a list of judges that you would like to add, simply upload a CSV file of all judges to Jury.
-2. Otherwise, you can use the "Add Judges" form on the admin dashboard to add individual judges -- you only need their name and email.
-
-When judges are added, they will receive an email, with information about how to access their own judging portal and login. Each judge will get a unique code to login. Once they log in, they will be able to start judging whenever an admin starts the judging session.
+When judges arrive, open **Add Judges** from the admin dashboard and display the general judging QR code, or select a track and display its QR code. Judges scan the code, enter their name, and are signed in immediately. After reading the instructions and confirming their track, they can start judging once an admin starts the session.
 
 ## Projects Submitted
 
