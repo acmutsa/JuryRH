@@ -67,6 +67,7 @@ All routes are listed in `server/router/init.go` with their respective handlers.
 | [/admin/timer](#get-admintimer)                        | GET    | judge | Gets the judge timer length                  |
 | [/admin/options](#get-adminoptions)                    | GET    | admin | Gets all config options set                  |
 | [/admin/options](#post-adminoptions)                   | POST   | admin | Sets config options                          |
+| [/admin/challenge-nominations](#get-adminchallenge-nominations) | GET | admin | Lists opt-in challenge nominations |
 | [/admin/tracks](#post-admintracks)                     | POST   | admin | Update the list of tracks                    |
 | [/admin/track-views](#post-admintrack-views)           | POST   | admin | Update the min views per track               |
 | [/admin/num-groups](#post-adminnum-groups)             | POST   | admin | Sets num of groups and reassigns nums        |
@@ -95,6 +96,7 @@ All routes are listed in `server/router/init.go` with their respective handlers.
 | [/judge/welcome](#get-judgewelcome)                    | GET    | judge | Checks for `read_welcome` for a judge        |
 | [/judge/welcome](#put-judgewelcome)                    | PUT    | judge | Set `read_welcome` to true for a judge       |
 | [/judge/projects](#get-judgeprojects)                  | GET    | judge | Gets the list of projects a judge has seen   |
+| [/judge/challenges](#get-judgechallenges)               | GET    | judge | Gets eligible opt-in challenges and quota    |
 | [/judge/next](#post-judgenext)                         | POST   | judge | Get next project for judge to view           |
 | [/judge/skip](#post-judgeskip)                         | POST   | judge | Skips the current project with a reason      |
 | [/judge/finish](#post-judgefinish)                     | POST   | judge | Finish viewing a project                     |
@@ -718,6 +720,7 @@ Gets all config options set
     },
     "group_names": ["String"],
     "ignore_tracks": ["String"],
+    "opt_in_challenges": ["String"],
     "max_req_per_min": "int",
     "block_reqs": "bool"
 }
@@ -744,6 +747,7 @@ Sets config options
     "auto_switch_prop": "float",
     "group_names": ["String"],
     "ignore_tracks": ["String"],
+    "opt_in_challenges": ["String"],
     "max_req_per_min": "int",
     "block_reqs": "bool"
 }
@@ -1184,11 +1188,22 @@ Finish viewing a project
 ```json
 {
     "notes": "String",
-    "starred": "bool"
+    "starred": "bool",
+    "challenge_stars": ["String"]
 }
 ```
 
 -   **Response**: OK response
+
+`challenge_stars` is optional. It accepts only enabled challenges entered by the current project during general judging. Each judge has a per-challenge quota (default 2). Invalid or over-quota nominations return 400 without finishing the project.
+
+### GET /judge/challenges
+
+Returns the current project's eligible opt-in challenges, remaining nominations for each, and the per-challenge limit. Requires judge authentication. Track judges receive an empty list.
+
+### GET /admin/challenge-nominations
+
+Returns nominated projects grouped by challenge, with project ID, name, table number, and nomination count. Requires admin authentication.
 
 ### POST /judge/rank
 

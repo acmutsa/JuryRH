@@ -82,6 +82,7 @@ func RunTests(context *util.Context) {
 				"Skip Project Creates Flag":      SkipProjectCreatesFlag,
 				"Judge Rank Projects":            JudgeRankProjects,
 				"Star Project":                   StarProject,
+				"Opt-in Challenge Nominations":   ChallengeNominations,
 				"Judge Notes Update":             JudgeNotesUpdate,
 				"Judge Next With No Projects":    JudgeNextWithNoActiveProjects,
 			},

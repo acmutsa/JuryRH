@@ -219,6 +219,25 @@ func SetOptions(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing request: " + err.Error()})
 		return
 	}
+	if options.OptInChallenges != nil {
+		challenges, err := database.GetChallenges(state.Db, ctx)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		known := make(map[string]bool)
+		for _, challenge := range challenges {
+			known[challenge] = true
+		}
+		selected := make(map[string]bool)
+		for _, challenge := range *options.OptInChallenges {
+			if !known[challenge] || selected[challenge] {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid opt-in challenge: " + challenge})
+				return
+			}
+			selected[challenge] = true
+		}
+	}
 
 	// Save the options in the database
 	err = database.UpdateOptions(state.Db, ctx, &options)
@@ -230,6 +249,17 @@ func SetOptions(ctx *gin.Context) {
 	// Send OK
 	state.Logger.AdminLogf("Updated options: %s", util.StructToStringWithoutNils(options))
 	ctx.JSON(http.StatusOK, gin.H{"ok": 1})
+}
+
+// GET /admin/challenge-nominations - Summarizes opt-in nominations for organizers.
+func GetChallengeNominations(ctx *gin.Context) {
+	state := GetState(ctx)
+	nominations, err := database.GetChallengeNominations(state.Db, ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, nominations)
 }
 
 type ResetDatabaseReq struct {

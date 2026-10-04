@@ -31,12 +31,13 @@ type Judge struct {
 }
 
 type JudgedProject struct {
-	ProjectId   primitive.ObjectID `bson:"project_id" json:"project_id"`
-	Starred     bool               `bson:"starred" json:"starred"`
-	Notes       string             `bson:"notes" json:"notes"`
-	Name        string             `bson:"name" json:"name"`
-	Location    int64              `bson:"location" json:"location"`
-	Description string             `bson:"description" json:"description"`
+	ProjectId      primitive.ObjectID `bson:"project_id" json:"project_id"`
+	Starred        bool               `bson:"starred" json:"starred"`
+	ChallengeStars []string           `bson:"challenge_stars" json:"challenge_stars"`
+	Notes          string             `bson:"notes" json:"notes"`
+	Name           string             `bson:"name" json:"name"`
+	Location       int64              `bson:"location" json:"location"`
+	Description    string             `bson:"description" json:"description"`
 }
 
 type AggRanking struct {
@@ -74,12 +75,13 @@ func RandCode() string {
 
 func JudgeProjectFromProject(project *Project, notes string, starred bool) *JudgedProject {
 	return &JudgedProject{
-		ProjectId:   project.Id,
-		Name:        project.Name,
-		Location:    project.Location,
-		Description: project.Description,
-		Notes:       notes,
-		Starred:     starred,
+		ProjectId:      project.Id,
+		Name:           project.Name,
+		Location:       project.Location,
+		Description:    project.Description,
+		Notes:          notes,
+		Starred:        starred,
+		ChallengeStars: []string{},
 	}
 }
 

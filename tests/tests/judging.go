@@ -2,8 +2,93 @@ package tests
 
 import (
 	"fmt"
+	"strings"
 	"tests/util"
 )
+
+// ChallengeNominations checks opt-in eligibility, quota, persistence, and the admin summary.
+func ChallengeNominations(context *util.Context) util.Result {
+	reset := util.PostRequest(context.Logger, "/admin/reset", util.H{"type": "projects"}, util.AdminAuth())
+	if !util.IsOk(reset) {
+		return util.NewResult(false, "Could not reset test projects: "+reset)
+	}
+	for i := 0; i < 3; i++ {
+		res := util.PostRequest(context.Logger, "/project/new", util.H{
+			"name":        fmt.Sprintf("Challenge Candidate %d", i),
+			"description": "Challenge nomination test", "url": "https://example.com",
+			"try_link": "", "video_link": "", "challenge_list": "Climate",
+		}, util.AdminAuth())
+		if !util.IsOk(res) {
+			return util.NewResult(false, "Could not add challenge project: "+res)
+		}
+	}
+	badOption := util.PostRequest(context.Logger, "/admin/options", util.H{"opt_in_challenges": []string{"Unknown"}}, util.AdminAuth())
+	if util.IsOk(badOption) {
+		return util.NewResult(false, "Unknown challenge was accepted")
+	}
+	setOption := util.PostRequest(context.Logger, "/admin/options", util.H{"opt_in_challenges": []string{"Climate"}}, util.AdminAuth())
+	if !util.IsOk(setOption) {
+		return util.NewResult(false, "Could not enable challenge: "+setOption)
+	}
+	defer util.PostRequest(context.Logger, "/admin/options", util.H{"opt_in_challenges": []string{}}, util.AdminAuth())
+	token, result := createNamedJudge(context, "challenge_test@example.com", "Challenge Test Judge")
+	if !result.Success {
+		return result
+	}
+	auth := util.JudgeAuth(token)
+	limit := util.ExtractInt(util.GetRequest(context.Logger, "/judge/challenges", auth), "limit")
+	if limit < 1 {
+		return util.NewResult(false, "Invalid challenge nomination limit")
+	}
+	for i := 3; i <= limit; i++ {
+		res := util.PostRequest(context.Logger, "/project/new", util.H{
+			"name":        fmt.Sprintf("Challenge Candidate %d", i),
+			"description": "Challenge nomination test", "url": "https://example.com",
+			"try_link": "", "video_link": "", "challenge_list": "Climate",
+		}, util.AdminAuth())
+		if !util.IsOk(res) {
+			return util.NewResult(false, "Could not add challenge project: "+res)
+		}
+	}
+	for i := 0; i <= limit; i++ {
+		next := util.PostRequest(context.Logger, "/judge/next", nil, auth)
+		if util.ExtractString(next, "project_id") == "" {
+			return util.NewResult(false, "No next challenge project: "+next)
+		}
+		choices := util.GetRequest(context.Logger, "/judge/challenges", auth)
+		if !strings.Contains(choices, "Climate") {
+			return util.NewResult(false, "Eligible challenge missing: "+choices)
+		}
+		if i == 0 {
+			invalid := util.PostRequest(context.Logger, "/judge/finish", util.H{"notes": "", "starred": false, "challenge_stars": []string{"Unknown"}}, auth)
+			if util.IsOk(invalid) {
+				return util.NewResult(false, "Ineligible nomination was accepted")
+			}
+		}
+		finish := util.PostRequest(context.Logger, "/judge/finish", util.H{"notes": "", "starred": false, "challenge_stars": []string{"Climate"}}, auth)
+		if i < limit && !util.IsOk(finish) {
+			return util.NewResult(false, "Valid nomination failed: "+finish)
+		}
+		if i == limit {
+			if util.IsOk(finish) {
+				return util.NewResult(false, "Nomination exceeded challenge quota")
+			}
+			finish = util.PostRequest(context.Logger, "/judge/finish", util.H{"notes": "", "starred": false}, auth)
+			if !util.IsOk(finish) {
+				return util.NewResult(false, "Finish without nomination failed: "+finish)
+			}
+		}
+	}
+	projects := util.GetRequest(context.Logger, "/judge/projects", auth)
+	if !strings.Contains(projects, "challenge_stars") {
+		return util.NewResult(false, "Nominations not stored with judged projects")
+	}
+	summary := util.GetRequest(context.Logger, "/admin/challenge-nominations", util.AdminAuth())
+	if !strings.Contains(summary, "Climate") || !strings.Contains(summary, "Challenge Candidate") {
+		return util.NewResult(false, "Admin nominations summary missing projects: "+summary)
+	}
+	return util.ResultOk()
+}
 
 // --- Judging Workflow Tests ---
 
@@ -13,7 +98,7 @@ func JudgingTestSetup(context *util.Context) util.Result {
 	// Disable group/track judging
 	setRes := util.PostRequest(context.Logger, "/admin/options", util.H{
 		"judge_tracks": false,
-		"multi_group": false,
+		"multi_group":  false,
 	}, util.AdminAuth())
 	if !util.IsOk(setRes) {
 		return util.NewResult(false, "Failed to set judge-tracks and multi_group: "+setRes)

@@ -661,13 +661,14 @@ const AdminSettings = () => {
                         <SettingsButton onClick={updateMinViews}>Update Min Views</SettingsButton>
                     </FieldButton>
 
+                    <SubSection>Opt-in Challenge Nominations</SubSection>
+                    <ChallengeBlock />
                     <SubSection>Ignore Tracks</SubSection>
                     <Description>
                         Set a list of tracks to ignore when uploading projects. This will be applied
                         when uploading projects -- projects that are ignored will NOT be added to
                         Jury at all. This is most effective when using Devpost CSV upload.
                     </Description>
-                    <ChallengeBlock />
                     <TextInput
                         text={ignoreTracks}
                         setText={setIgnoreTracks}
@@ -754,7 +755,6 @@ const AdminSettings = () => {
                                 under the 'Opt-In Prizes' category. Only the tracks listed here will
                                 be judged!
                             </Description>
-                            <ChallengeBlock />
                             <TextInput
                                 text={tracks}
                                 setText={setTracks}

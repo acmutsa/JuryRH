@@ -42,6 +42,8 @@ Note that judges can also star projects from this screen. Projects' titles, loca
 
 ## Judging Projects
 
+When an organizer enables an opt-in challenge, a general judge can nominate an eligible project in the finish dialog. The dialog shows only challenges that the project entered and how many nominations the judge has left for each. The default is two nominations per judge per challenge. These nominations are separate from the overall star and cannot be changed after finishing the project.
+
 ![Viewing Project Page](./assets/view-project.png)
 
 Once **Next Project** is clicked on the judge dashboard, they will be taken to their next project. Judges will see the project name and table number. They will proceed to that table number to start judging.

@@ -189,9 +189,10 @@ func DropRankings(db *mongo.Database) error {
 		context.Background(),
 		gin.H{},
 		gin.H{"$set": gin.H{
-			"rankings":                  []primitive.ObjectID{},
-			"rankings_agg":              []models.AggRanking{},
-			"seen_projects.$[].starred": false,
+			"rankings":                          []primitive.ObjectID{},
+			"rankings_agg":                      []models.AggRanking{},
+			"seen_projects.$[].starred":         false,
+			"seen_projects.$[].challenge_stars": []string{},
 		}},
 	)
 	return err

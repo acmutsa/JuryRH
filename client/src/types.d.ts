@@ -83,9 +83,16 @@ interface JudgedProject {
     project_id: string;
     notes: string;
     starred: boolean;
+    challenge_stars: string[] | null;
     name: string;
     location: number;
     description: string;
+}
+
+interface JudgeChallengeOptions {
+    challenges: string[];
+    remaining: Record<string, number>;
+    limit: number;
 }
 
 type JudgedProjectWithUrl = {
@@ -136,6 +143,7 @@ interface Options {
     deliberation: boolean;
     group_names: string[];
     ignore_tracks: string[];
+    opt_in_challenges: string[];
     block_reqs: boolean;
     max_req_per_min: number;
 }

@@ -69,6 +69,9 @@ func UpdateOptions(db *mongo.Database, ctx context.Context, options *models.Opti
 	if options.IgnoreTracks != nil {
 		update["ignore_tracks"] = *options.IgnoreTracks
 	}
+	if options.OptInChallenges != nil {
+		update["opt_in_challenges"] = *options.OptInChallenges
+	}
 	if options.MaxReqPerMin != nil {
 		update["max_req_per_min"] = *options.MaxReqPerMin
 	}

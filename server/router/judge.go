@@ -3,11 +3,13 @@ package router
 import (
 	"errors"
 	"net/http"
+	"server/config"
 	"server/database"
 	"server/funcs"
 	"server/judging"
 	"server/models"
 	"server/util"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -664,8 +666,56 @@ func EditJudge(ctx *gin.Context) {
 }
 
 type JudgeScoreRequest struct {
-	Notes   string `json:"notes"`
-	Starred bool   `json:"starred"`
+	Notes          string   `json:"notes"`
+	Starred        bool     `json:"starred"`
+	ChallengeStars []string `json:"challenge_stars"`
+}
+
+func challengeStarLimit() int {
+	limit, err := strconv.Atoi(config.GetOptEnv("JURY_CHALLENGE_STAR_LIMIT", "2"))
+	if err != nil || limit < 1 {
+		return 2
+	}
+	return limit
+}
+
+// GET /judge/challenges - Eligible opt-in challenges and remaining nominations.
+func GetJudgeChallenges(ctx *gin.Context) {
+	state := GetState(ctx)
+	judge := ctx.MustGet("judge").(*models.Judge)
+	result := gin.H{"challenges": []string{}, "remaining": map[string]int{}, "limit": challengeStarLimit()}
+	if judge.Track == "" && judge.Current != nil {
+		options, err := database.GetOptions(state.Db, ctx)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		project, err := database.FindProject(state.Db, ctx, judge.Current)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if project == nil {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "current project not found"})
+			return
+		}
+		eligible := make(map[string]bool)
+		for _, challenge := range project.ChallengeList {
+			eligible[challenge] = true
+		}
+		used := judging.ChallengeStarUsage(judge)
+		challenges := make([]string, 0)
+		remaining := make(map[string]int)
+		for _, challenge := range options.OptInChallenges {
+			if eligible[challenge] {
+				challenges = append(challenges, challenge)
+				remaining[challenge] = max(0, challengeStarLimit()-used[challenge])
+			}
+		}
+		result["challenges"] = challenges
+		result["remaining"] = remaining
+	}
+	ctx.JSON(http.StatusOK, result)
 }
 
 // POST /judge/finish - Endpoint to finish judging a project
@@ -686,30 +736,48 @@ func JudgeFinish(ctx *gin.Context) {
 
 	// Run remaining actions in a transaction
 	err = database.WithTransaction(state.Db, func(sc mongo.SessionContext) error {
+		currentJudge, err := database.FindJudge(state.Db, sc, judge.Id)
+		if err != nil || currentJudge == nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error loading judge"})
+			return errors.New("error loading judge")
+		}
+		if currentJudge.Current == nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "judge has no current project"})
+			return errors.New("judge has no current project")
+		}
 		// Get the options and return error if deliberations
-		options, err := database.GetOptions(state.Db, ctx)
+		options, err := database.GetOptions(state.Db, sc)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error getting options: " + err.Error()})
 			return err
 		}
 		if options.Deliberation {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "cannot score due to deliberation mode being enabled"})
-			return err
+			return errors.New("deliberation mode enabled")
 		}
 
 		// Get the project from the database
-		project, err := database.FindProject(state.Db, sc, judge.Current)
+		project, err := database.FindProject(state.Db, sc, currentJudge.Current)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error finding project in database: " + err.Error()})
 			return err
 		}
+		if project == nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "current project not found"})
+			return errors.New("current project not found")
+		}
 
 		// Create the judged project object
 		judgedProject := models.JudgeProjectFromProject(project, scoreReq.Notes, scoreReq.Starred)
+		if err := judging.ValidateChallengeStars(currentJudge, project, options.OptInChallenges, scoreReq.ChallengeStars, challengeStarLimit()); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return err
+		}
+		judgedProject.ChallengeStars = scoreReq.ChallengeStars
 
 		// If groups are enabled and auto switch, move the judge to the next group conditionally
 		if options.MultiGroup && options.SwitchingMode == "auto" {
-			err = judging.MoveJudgeGroup(state.Db, sc, judge, options)
+			err = judging.MoveJudgeGroup(state.Db, sc, currentJudge, options)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error moving judge group: " + err.Error()})
 				return err
@@ -717,14 +785,14 @@ func JudgeFinish(ctx *gin.Context) {
 		}
 
 		// Update the judge and project
-		err = database.UpdateAfterSeen(state.Db, sc, judge, judgedProject)
+		err = database.UpdateAfterSeen(state.Db, sc, currentJudge, judgedProject)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error storing scores in database: " + err.Error()})
 			return err
 		}
 
 		// Reset list of skipped projects due to busy status
-		err = database.ResetBusyProjectListForJudge(state.Db, sc, judge)
+		err = database.ResetBusyProjectListForJudge(state.Db, sc, currentJudge)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error resetting busy project list in database: " + err.Error()})
 			return err
@@ -742,7 +810,7 @@ func JudgeFinish(ctx *gin.Context) {
 		starred = " and starred project"
 	}
 	projId := judge.Current.Hex()
-	state.Logger.JudgeLogf(judge, "Finished judging project %s%s", projId, starred)
+	state.Logger.JudgeLogf(judge, "Finished judging project %s%s; nominated for %v", projId, starred, scoreReq.ChallengeStars)
 	ctx.JSON(http.StatusOK, gin.H{"ok": 1})
 }
 
@@ -1096,7 +1164,7 @@ func AddJudgeFromQR(ctx *gin.Context) {
 		}
 
 		// Send email to judge
-			if qrReq.NoSend == nil || !*qrReq.NoSend {
+		if qrReq.NoSend == nil || !*qrReq.NoSend {
 			err = funcs.SendJudgeEmail(judge, hostname)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error sending judge email: " + err.Error()})

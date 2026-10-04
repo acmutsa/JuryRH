@@ -52,7 +52,23 @@ const JudgeLive = () => {
     const [paused, setPaused] = useState(false);
     const [notes, setNotes] = useState('');
     const [starred, setStarred] = useState(false);
+    const [challengeStars, setChallengeStars] = useState<string[]>([]);
+    const [challengeOptions, setChallengeOptions] = useState<JudgeChallengeOptions>({
+        challenges: [],
+        remaining: {},
+        limit: 2,
+    });
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!judge?.current || judge.track !== '') return;
+        async function fetchChallenges() {
+            const res = await getRequest<JudgeChallengeOptions>('/judge/challenges', 'judge');
+            if (res.status !== 200) errorAlert(res);
+            else if (res.data) setChallengeOptions(res.data);
+        }
+        fetchChallenges();
+    }, [judge?.current, judge?.track]);
 
     useEffect(() => {
         async function fetchData() {
@@ -260,9 +276,11 @@ const JudgeLive = () => {
         const res = await postRequest<OkResponse>('/judge/finish', 'judge', {
             notes,
             starred,
+            challenge_stars: challengeStars,
         });
         if (res.status !== 200) {
             errorAlert(res);
+            return;
         }
 
         navigate('/judge');
@@ -429,6 +447,9 @@ const JudgeLive = () => {
                     setNotes={setNotes}
                     starred={starred}
                     setStarred={setStarred}
+                    challenges={challengeOptions}
+                    challengeStars={challengeStars}
+                    setChallengeStars={setChallengeStars}
                 />
                 <FlagPopup
                     enabled={flagPopup}

@@ -20,6 +20,7 @@ EMAIL_PASSWORD=
 SENDGRID_API_KEY=
 
 PORT=
+JURY_CHALLENGE_STAR_LIMIT=2
 ```
 
 The `JURY_NAME` and `JURY_ADMIN_PASSWORD` are simply the name of the app and the admin password that you are using for local development. For development, the values here don't matter that much, but you should remember your admin password to log in (I personally use the classic `admin` password).
@@ -29,3 +30,5 @@ If you are using MongoDB Atlas, you should fill in the `MONGODB_URI` field using
 For all email fields, refer to the information in the ["Deploying for your Hackathon"](/docs/usage/deploy#email-hosting) page.
 
 Finally, the definition of the `PORT` variable is optional -- specify this if you wish to connect to your app on a different port.
+
+`JURY_CHALLENGE_STAR_LIMIT` is optional. It sets the maximum number of projects each general judge may nominate per opted-in challenge. The default is 2; invalid or nonpositive values also use 2.

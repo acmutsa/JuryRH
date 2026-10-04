@@ -32,6 +32,9 @@ docker compose -f docker-compose.dev.yml up
 
 This may take a while to download and build the first time but will be must faster on subsequent runs. You should see the following messages in the log when they are done:
 
+The frontend serves API requests through its Vite proxy, so opening port 3000 through a forwarded URL also reaches the backend. The backend remains available directly on port 8000.
+Compose starts the frontend after the backend answers `/api/`. If the backend stays unhealthy, check `docker compose -f docker-compose.dev.yml logs go-dev` for the database connection error. The `Did not load .env file` line is expected in Docker; Compose passes those values as environment variables.
+
 Frontend:
 ```
 jury-dev-frontend  | $ vite
@@ -68,6 +71,7 @@ docker compose -f docker-compose-mongo.dev.yml up
 ```
 
 As with above, you will need to wait for both the backend and frontend to load. Additionally, you will have to wait for the MongoDB database to intialize and create a replica set (takes more than 10 seconds).
+Compose waits for replica set setup to finish before starting the backend, and for the backend to answer `/api/` before starting the frontend.
 
 :::warning
 Make sure you don't define `MONGODB_URI` when using the local database. It will take precedence over the manual username/password definition!
@@ -93,6 +97,8 @@ Requirements:
 -   [go](https://go.dev/)
 
 Copy `.env.template` into `.env` and fill in the environmental variables (same as above). Additionally, copy `client/.env.template` into `client/.env` and copy over the relavent environmental variables from `.env`. This is used to expose the correct environmental variables to the running instance of the Vite frontend as you will not have Docker compose to automatically do that for you.
+
+Set `VITE_JURY_URL=/api` in `client/.env`. Vite proxies those requests to `http://localhost:8000` when the frontend runs outside Docker.
 
 Client dev server (PORT 3000):
 
