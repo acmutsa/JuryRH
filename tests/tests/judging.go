@@ -32,6 +32,9 @@ func ChallengeNominations(context *util.Context) util.Result {
 		return util.NewResult(false, "Could not enable challenge: "+setOption)
 	}
 	defer util.PostRequest(context.Logger, "/admin/options", util.H{"opt_in_challenges": []string{}}, util.AdminAuth())
+	if projects := util.ExtractInt(util.GetRequest(context.Logger, "/admin/stats?enabled_challenges=true", util.AdminAuth()), "projects"); projects != 3 {
+		return util.NewResult(false, "Enabled challenge stats did not filter projects")
+	}
 	token, result := createNamedJudge(context, "Challenge Test Judge")
 	if !result.Success {
 		return result

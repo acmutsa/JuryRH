@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { errorAlert, timeSince } from '../../../util';
 import DeletePopup from './DeletePopup';
 import EditProjectPopup from './EditProjectPopup';
-import { useAdminStore, useAdminTableStore, useFlagsStore, useOptionsStore } from '../../../store';
+import {
+    ENABLED_CHALLENGES_VIEW,
+    useAdminStore,
+    useAdminTableStore,
+    useFlagsStore,
+    useOptionsStore,
+} from '../../../store';
 import { putRequest } from '../../../api';
 import FlagsPopup from '../FlagsPopup';
 import { twMerge } from 'tailwind-merge';
@@ -82,10 +88,10 @@ const ProjectRow = ({ project, idx }: ProjectRowProps) => {
     let score = project.score;
     let stars = project.stars;
     let seen = project.seen;
-    if (options.judge_tracks && track !== '') {
+    if (options.judge_tracks && track !== '' && track !== ENABLED_CHALLENGES_VIEW) {
         score = project.track_scores?.[track] ?? 0;
-        stars = project.track_stars[track] || 0;
-        seen = project.track_seen[track] || 0;
+        stars = project.track_stars?.[track] ?? 0;
+        seen = project.track_seen?.[track] ?? 0;
     }
 
     return (

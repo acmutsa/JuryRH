@@ -38,4 +38,4 @@ Track judges rank projects in order and may also star favorites, using the same 
 
 Track scores use the same Copeland counting method as [general judging](/docs/usage/admin/scoring#ranking), aggregated only from judges assigned to that track. Select a track in the admin dashboard to view and sort its **Score**, **Stars**, and **Seen** columns. Track scores and stars are separate from general judging and from other tracks. Use scores as the main metric and stars as a secondary signal during deliberation.
 
-Opt-in challenges remain star nominations from general judges, with no ordered ranking for challenges.
+Opt-in challenges remain star nominations from general judges, with no ordered ranking for challenges. When one or more challenges are enabled, the admin dashboard selector also includes **Enabled Challenges**. It filters the project table and dashboard project stats to projects entered in any enabled challenge; its Score, Stars, and Seen columns remain the general-judging values.

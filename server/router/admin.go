@@ -59,8 +59,18 @@ func GetAdminStats(ctx *gin.Context) {
 	// Get the state from the context
 	state := GetState(ctx)
 
-	// Aggregate the stats
-	stats, err := database.AggregateStats(state.Db, "")
+	var stats *models.Stats
+	var err error
+	if ctx.Query("enabled_challenges") == "true" {
+		options, optionsErr := database.GetOptions(state.Db, ctx)
+		if optionsErr != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error getting options: " + optionsErr.Error()})
+			return
+		}
+		stats, err = database.AggregateEnabledChallengeStats(state.Db, options.OptInChallenges)
+	} else {
+		stats, err = database.AggregateStats(state.Db, ctx.Query("track"))
+	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error aggregating stats: " + err.Error()})
 		return

@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import ProjectRow from './ProjectRow';
-import { useAdminStore, useAdminTableStore, useOptionsStore } from '../../../store';
+import {
+    ENABLED_CHALLENGES_VIEW,
+    useAdminStore,
+    useAdminTableStore,
+    useOptionsStore,
+} from '../../../store';
 import HeaderEntry from './HeaderEntry';
 import { ProjectSortField } from '../../../enums';
 import { getRequest } from '../../../api';
@@ -70,20 +75,24 @@ const ProjectsTable = () => {
         setSelected(Array(unsortedProjects.length).fill(false));
 
         sortAndFilterProjects();
-    }, [sortState, selectedTrack]);
+    }, [sortState, selectedTrack, options]);
 
     useEffect(() => {
         sortAndFilterProjects();
-    }, [unsortedProjects]);
+    }, [unsortedProjects, options]);
 
     const sortAndFilterProjects = () => {
         // Filter by track if enabled
         const filteredProjects =
-            options.judge_tracks && selectedTrack !== ''
-                ? unsortedProjects.filter(
-                      (project) => project.challenge_list.indexOf(selectedTrack) !== -1
+            selectedTrack === ENABLED_CHALLENGES_VIEW
+                ? unsortedProjects.filter((project) =>
+                      project.challenge_list.some((challenge) =>
+                          options.opt_in_challenges.includes(challenge)
+                      )
                   )
-                : unsortedProjects;
+                : options.judge_tracks && selectedTrack !== ''
+                  ? unsortedProjects.filter((project) => project.challenge_list.includes(selectedTrack))
+                  : unsortedProjects;
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let sortFunc = (_: Project, b: Project) => 0;
@@ -111,7 +120,11 @@ const ProjectsTable = () => {
                 break;
             case ProjectSortField.Score:
                 sortFunc = (a, b) => {
-                    if (options.judge_tracks && selectedTrack !== '') {
+                    if (
+                        options.judge_tracks &&
+                        selectedTrack !== '' &&
+                        selectedTrack !== ENABLED_CHALLENGES_VIEW
+                    ) {
                         const aScore = a.track_scores?.[selectedTrack] ?? 0;
                         const bScore = b.track_scores?.[selectedTrack] ?? 0;
                         return (aScore - bScore) * asc;
@@ -121,9 +134,13 @@ const ProjectsTable = () => {
                 break;
             case ProjectSortField.Stars:
                 sortFunc = (a, b) => {
-                    if (options.judge_tracks && selectedTrack !== '') {
-                        const ats = a.track_stars[selectedTrack] ?? 0;
-                        const bts = b.track_stars[selectedTrack] ?? 0;
+                    if (
+                        options.judge_tracks &&
+                        selectedTrack !== '' &&
+                        selectedTrack !== ENABLED_CHALLENGES_VIEW
+                    ) {
+                        const ats = a.track_stars?.[selectedTrack] ?? 0;
+                        const bts = b.track_stars?.[selectedTrack] ?? 0;
                         return (ats - bts) * asc;
                     }
                     return (a.stars - b.stars) * asc;
@@ -131,9 +148,13 @@ const ProjectsTable = () => {
                 break;
             case ProjectSortField.Seen:
                 sortFunc = (a, b) => {
-                    if (options.judge_tracks && selectedTrack !== '') {
-                        const ats = a.track_seen[selectedTrack] ?? 0;
-                        const bts = b.track_seen[selectedTrack] ?? 0;
+                    if (
+                        options.judge_tracks &&
+                        selectedTrack !== '' &&
+                        selectedTrack !== ENABLED_CHALLENGES_VIEW
+                    ) {
+                        const ats = a.track_seen?.[selectedTrack] ?? 0;
+                        const bts = b.track_seen?.[selectedTrack] ?? 0;
                         return (ats - bts) * asc;
                     }
                     return (a.seen - b.seen) * asc;

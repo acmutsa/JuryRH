@@ -17,10 +17,24 @@ type StatsAgg struct {
 
 // AggregateStats aggregates all stats from the database.
 func AggregateStats(db *mongo.Database, track string) (*models.Stats, error) {
+	return aggregateStats(db, track, nil)
+}
+
+// AggregateEnabledChallengeStats returns main-judging stats for projects entered in an enabled challenge.
+func AggregateEnabledChallengeStats(db *mongo.Database, challenges []string) (*models.Stats, error) {
+	if challenges == nil {
+		challenges = []string{}
+	}
+	return aggregateStats(db, "", challenges)
+}
+
+func aggregateStats(db *mongo.Database, track string, challenges []string) (*models.Stats, error) {
 	// Get the average project seen using an aggregation pipeline
 	matchObj := gin.H{"active": true}
 	if track != "" {
 		matchObj["challenge_list"] = track
+	} else if challenges != nil {
+		matchObj["challenge_list"] = gin.H{"$in": challenges}
 	}
 	projCursor, err := db.Collection("projects").Aggregate(context.Background(), []gin.H{
 		{"$match": matchObj},

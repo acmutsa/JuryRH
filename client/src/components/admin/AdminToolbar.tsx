@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import Button from '../Button';
 import FlagsPopup from './FlagsPopup';
 import Dropdown from '../Dropdown';
-import { useAdminStore, useAdminTableStore, useOptionsStore } from '../../store';
+import {
+    ENABLED_CHALLENGES_VIEW,
+    useAdminStore,
+    useAdminTableStore,
+    useOptionsStore,
+} from '../../store';
 import ActionsDropdown from '../ActionsDropdown';
 import { postRequest } from '../../api';
 import { errorAlert } from '../../util';
@@ -51,7 +56,7 @@ const AdminToolbar = (props: { showProjects: boolean; lastUpdate: Date }) => {
 
         const newSelectedIds: string[] = [];
         selected.forEach((isSelected, idx) => {
-            if (isSelected) newSelectedIds.push(ref[idx].id);
+            if (isSelected && ref[idx]) newSelectedIds.push(ref[idx].id);
         });
         setSelectedIds(newSelectedIds);
 
@@ -134,10 +139,22 @@ const AdminToolbar = (props: { showProjects: boolean; lastUpdate: Date }) => {
                             </Button>
                         )}
                     </div>
-                    {options && options.judge_tracks && (
+                    {options && (options.judge_tracks || options.opt_in_challenges.length > 0) && (
                         <Dropdown
-                            options={['Main Judging', ...options.tracks]}
-                            selected={selectedTrack === '' ? 'Main Judging' : selectedTrack}
+                            options={[
+                                'Main Judging',
+                                ...(options.judge_tracks ? options.tracks : []),
+                                ...(options.opt_in_challenges.length > 0
+                                    ? ['Enabled Challenges']
+                                    : []),
+                            ]}
+                            selected={
+                                selectedTrack === ''
+                                    ? 'Main Judging'
+                                    : selectedTrack === ENABLED_CHALLENGES_VIEW
+                                      ? 'Enabled Challenges'
+                                      : selectedTrack
+                            }
                             setSelected={setSelectedTrack}
                             large
                             className="text-center text-md md:text-xl h-12"

@@ -54,11 +54,11 @@ const JudgesTable = () => {
         setSelected(Array(unsortedJudges.length).fill(false));
 
         sortAndFilterJudges();
-    }, [sortState, selectedTrack]);
+    }, [sortState, selectedTrack, options]);
 
     useEffect(() => {
         sortAndFilterJudges();
-    }, [unsortedJudges]);
+    }, [unsortedJudges, options]);
 
     const sortAndFilterJudges = () => {
         // Filter by track

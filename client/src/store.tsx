@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { getRequest } from './api';
 import { errorAlert } from './util';
 
+// A dashboard-only filter; this is never sent as a track name to the API.
+export const ENABLED_CHALLENGES_VIEW = '__enabled_challenges__';
+
 interface AdminStore {
     stats: Stats;
     fetchStats: () => Promise<void>;
@@ -25,8 +28,13 @@ const useAdminStore = create<AdminStore>()((set) => ({
 
     fetchStats: async () => {
         const selectedTrack = useOptionsStore.getState().selectedTrack;
-        const slash = selectedTrack === '' ? '' : '/';
-        const statsRes = await getRequest<Stats>(`/admin/stats${slash}${selectedTrack}`, 'admin');
+        const path =
+            selectedTrack === ENABLED_CHALLENGES_VIEW
+                ? '/admin/stats?enabled_challenges=true'
+                : selectedTrack === ''
+                  ? '/admin/stats'
+                  : `/admin/stats?track=${encodeURIComponent(selectedTrack)}`;
+        const statsRes = await getRequest<Stats>(path, 'admin');
         if (statsRes.status !== 200) {
             errorAlert(statsRes);
             return;
@@ -162,11 +170,17 @@ const useOptionsStore = create<OptionsStore>((set) => ({
             return null;
         }
         const data = optionsRes.data as Options;
-        set({ options: data });
+        set((state) => ({
+            options: data,
+            selectedTrack:
+                state.selectedTrack === ENABLED_CHALLENGES_VIEW && data.opt_in_challenges.length === 0
+                    ? ''
+                    : state.selectedTrack,
+        }));
         return data;
     },
 
-    setSelectedTrack: async (track: string) => {
+    setSelectedTrack: (track: string) => {
         // If main judging selected, reset selected track
         if (track === 'Main Judging') {
             set({ selectedTrack: '' });
