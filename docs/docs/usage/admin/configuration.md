@@ -24,11 +24,9 @@ The settings page should look like the following:
 
 All settings will have a description describing their functionality, but we will go through each section one-by-one here for completeness. Note that a lot of the more destructive settings will be **disabled while judging is running**. This is to minimize the chance accidents happen and mess up judging.
 
-### Judge Login
+### Judge Registration
 
-This section is mainly for after judging has started. Due to an experience with a brute-force login attack (due to the nature of judge codes), we have implemented a rate-limiting and login disabling system. The first button is used to disable logins. Once a judge is logged in, they can continue judging even if logins are disabled. We recommend **disabling logins once judging has started**.
-
-Another option for mitigating brute force login attacks is to limit the number of logins per minute. This number can be changed at any time during judging, so another idea for preventing this sort of attack is to set the maximum to a low number such as 10 per minute. This allows for a few judges to log in without opening up the possibility for a brute force attack.
+Use **Disable Registration** to stop new judges joining through QR codes. Judges with active sessions can continue judging. **Max Registrations Per Minute** limits requests to `POST /qr/add` per IP address, using the existing `block_reqs` and `max_requests_per_minute` settings. Registration that is blocked or exceeds the limit returns HTTP 429.
 
 ### Judging Parameters
 

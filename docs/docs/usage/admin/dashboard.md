@@ -31,7 +31,7 @@ Clicking on the **Actions** button will bring up the following popup:
 In this popup, there are three main functions. The first is a link to the **audit log**. The audit log lets you see ALL actions that have been taken during the judging period. Basically all actions that are performed are listed here such as:
 
 - Admin login attempts
-- Judge login attempts
+- Judge QR registrations
 - Judge sees a project
 - Judge changes rankings
 - Project gets added

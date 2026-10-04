@@ -761,7 +761,7 @@ func GetGroupInfo(ctx *gin.Context) {
 	})
 }
 
-// POST /admin/block-reqs - blocks or unblocks login requests
+// POST /admin/block-reqs - blocks or unblocks QR registration requests
 func SetBlockReqs(ctx *gin.Context) {
 	// Get the state from the context
 	state := GetState(ctx)

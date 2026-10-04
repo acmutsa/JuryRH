@@ -214,7 +214,7 @@ func rateLimit(limiter *Limiter) gin.HandlerFunc {
 
 		ip := ctx.ClientIP()
 		if !limiter.CheckNewRequest(ip) {
-			ctx.AbortWithStatusJSON(429, gin.H{"error": "Too many requests. Logins have been blocked or rate limited."})
+			ctx.AbortWithStatusJSON(429, gin.H{"error": "Too many requests. Judge registration has been blocked or rate limited."})
 			return
 		}
 		ctx.Next()

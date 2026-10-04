@@ -170,7 +170,7 @@ const AdminSettings = () => {
         }
 
         setBlockReqs(!blockReqs);
-        alert(`Judge login is now ${blockReqs ? 'enabled' : 'BLOCKED'}`);
+        alert(`Judge registration is now ${blockReqs ? 'enabled' : 'BLOCKED'}`);
     };
 
     const updateMaxReqPerMin = async () => {
@@ -548,7 +548,7 @@ const AdminSettings = () => {
                 <h1 className="text-4xl font-bold">Settings</h1>
 
                 <div className="my-4 flex flex-row flex-wrap gap-1 md:gap-2">
-                    <NavButton>Judge Login</NavButton>
+                    <NavButton>Judge Registration</NavButton>
                     <NavButton>Judging Parameters</NavButton>
                     <NavButton>Judging Clock and Timer</NavButton>
                     <NavButton>Challenge Stars</NavButton>
@@ -567,20 +567,19 @@ const AdminSettings = () => {
                 )}
 
                 <Card>
-                    <Section>Judge Login</Section>
+                    <Section>Judge Registration</Section>
 
-                    <SubSection>Disable Logins</SubSection>
+                    <SubSection>Disable Registration</SubSection>
                     <Description>
-                        Disable ALL judge login endpoints. Judges who are currently logged in can
-                        still judge, but no new judges can log in. This is useful if you want to
-                        prevent brute force enumeration attacks.
+                        Disable new judge registrations through QR codes. Judges with an active
+                        session can continue judging.
                     </Description>
                     <div className="flex flex-col md:flex-row items-center md:gap-4">
                         <SettingsButton
                             onClick={updateBlockReqs}
                             type={blockReqs ? 'primary' : 'error'}
                         >
-                            {blockReqs ? 'Enable Logins' : 'Disable Logins'}
+                            {blockReqs ? 'Enable Registration' : 'Disable Registration'}
                         </SettingsButton>
                         <p
                             className={twMerge(
@@ -588,20 +587,19 @@ const AdminSettings = () => {
                                 blockReqs ? 'text-error' : 'text-primary'
                             )}
                         >
-                            {blockReqs ? 'Logins currently BLOCKED' : 'Logins currently ENABLED'}
+                            {blockReqs ? 'Registration currently BLOCKED' : 'Registration currently ENABLED'}
                         </p>
                     </div>
 
-                    <SubSection>Max Logins Per Minute</SubSection>
+                    <SubSection>Max Registrations Per Minute</SubSection>
                     <Description>
-                        Set the maximum number of requests that can be made to the login endpoint
-                        per minute. This is also useful for preventing brute force attacks.
+                        Set the maximum number of QR registration requests per IP address per minute.
                     </Description>
                     <FieldButton>
                         <TextInput
                             text={maxReqPerMin}
                             setText={setMaxReqPerMin}
-                            label="Max Logins Per Minute"
+                            label="Max Registrations Per Minute"
                             placeholder="Enter an integer..."
                             large
                             className="my-2 mr-4"
