@@ -62,6 +62,8 @@ This section allows you to export data from Jury as a CSV. There are 4 groupings
 - **Export Rankings** - Exports only the judges and their individual rankings of projects
 - **Export by Challenges** - Exports a zip file, with each CSV file containing only the projects that submitted to a specific challenge; each CSV will be titled with that challenge name
 
+Project CSVs include live **Score** and **Stars** totals from general judging, **Track Score**, **Track Stars**, and **Track Seen** columns for each configured track, and **Challenge Stars** for each challenge enabled in Settings. The per-challenge ZIP contains the same columns, filtered to projects entered in that challenge. Scores use the same Copeland calculation as the dashboard; challenge nominations are separate from general and track stars. A zero means no recorded total for an eligible project; a blank means the project did not enter that track or challenge.
+
 ### Reset Data
 
 At the bottom of the settings page, there are multiple ways to reset data in Jury:
@@ -71,8 +73,6 @@ At the bottom of the settings page, there are multiple ways to reset data in Jur
 - **Delete all Projects**: This will delete all projects, judging data, and flags. It will not delete settings and judges.
 - **Delete all Judges**: This will delete all judges, judging data, and flags. It will not delete settings and projects.
 - **Drop Database**: This button will reset the database. It's pretty destructive, so obviously do not click it unless you are sure you want to COMPLETELY CLEAR Jury!!!
-
-Project CSVs include live **Score** and **Stars** totals from general judging, **Track Score**, **Track Stars**, and **Track Seen** columns for each configured track, and **Challenge Stars** for each challenge enabled in Settings. The per-challenge ZIP contains the same columns, filtered to projects entered in that challenge. Scores use the same Copeland calculation as the dashboard; challenge nominations are separate from general and track stars. A zero means no recorded total for an eligible project; a blank means the project did not enter that track or challenge.
 
 ## Challenge Stars
 

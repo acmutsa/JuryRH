@@ -91,9 +91,10 @@ const FinishPopup = (props: FinishPopupProps) => {
                     </div>
                 ) : props.challenges.challenges.length === 0 ? (
                     <p className="text-sm text-light">
-                        {props.challenges.message || (props.judge.track !== ''
-                            ? 'Challenge stars are available during general judging. Your stars here count for your assigned track.'
-                            : 'This project has no challenges enabled for stars.')}
+                        {props.challenges.message ||
+                            (props.judge.track !== ''
+                                ? 'Challenge stars are available during general judging. Your stars here count for your assigned track.'
+                                : 'This project has no challenges enabled for stars.')}
                     </p>
                 ) : (
                     <>
