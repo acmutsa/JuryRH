@@ -22,9 +22,9 @@ func RunTests(context *util.Context) {
 		{
 			Name: "Smoke Tests",
 			Tests: map[string]func(*util.Context) util.Result{
-				"Heartbeat": Heartbeat,
-				"Admin Login":     SmokeAdminLogin,
-				"Admin Auth":      SmokeAdminAuth,
+				"Heartbeat":   Heartbeat,
+				"Admin Login": SmokeAdminLogin,
+				"Admin Auth":  SmokeAdminAuth,
 			},
 		},
 		{
@@ -46,10 +46,10 @@ func RunTests(context *util.Context) {
 				"Judge Login With Valid Code":               JudgeLoginWithValidCode,
 				"Judge Login With Invalid Code":             JudgeLoginWithInvalidCode,
 				"Add And Delete Judge":                      AddAndDeleteJudge,
-				"Edit Judge":                               EditJudge,
-				"Hide Judge":                               HideJudge,
-				"Judge Welcome Flow":                       JudgeWelcomeFlow,
-				"Judge Stats Reflect Additions":            JudgeStatsReflectAdditions,
+				"Edit Judge":                                EditJudge,
+				"Hide Judge":                                HideJudge,
+				"Judge Welcome Flow":                        JudgeWelcomeFlow,
+				"Judge Stats Reflect Additions":             JudgeStatsReflectAdditions,
 				"QR Check Empty Code Rejected":              QRCheckEmptyCodeRejected,
 				"QR Check Track Empty Code Rejected":        QRCheckTrackEmptyCodeRejected,
 				"QR Add Empty Code Does Not Create Judge":   QRAddEmptyCodeDoesNotCreateJudge,
@@ -61,6 +61,8 @@ func RunTests(context *util.Context) {
 			Name: "Project CRUD",
 			Tests: map[string]func(*util.Context) util.Result{
 				"Add Project":                     AddProject,
+				"Devpost CSV Uses Headers":        DevpostCSVUsesHeaders,
+				"Devpost CSV Missing Prizes":      DevpostCSVMissingPrizes,
 				"Add And Delete Project":          AddAndDeleteProject,
 				"Delete Non-Existent Project":     DeleteNonExistentProject,
 				"Edit Project":                    EditProject,
@@ -72,7 +74,7 @@ func RunTests(context *util.Context) {
 			},
 		},
 		{
-			Name: "Judging Workflow",
+			Name:  "Judging Workflow",
 			Setup: JudgingTestSetup,
 			Tests: map[string]func(*util.Context) util.Result{
 				"Judging Standard Path":          JudgingStandardPath,

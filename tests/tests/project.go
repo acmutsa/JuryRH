@@ -3,6 +3,7 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"tests/util"
 )
 
@@ -19,6 +20,57 @@ func AddProject(context *util.Context) util.Result {
 		"challenge_list": "",
 	}, util.AdminAuth())
 	return util.AssertOk(res, "Failed to add project: "+res)
+}
+
+// DevpostCSVUsesHeaders verifies shifted columns and prize selections survive the upload route.
+func DevpostCSVUsesHeaders(context *util.Context) util.Result {
+	name := "Devpost Header Test Project"
+	content := "Opt-In Prizes,Custom Question,Project Status,Project Title,Submission Url,About The Project,Assigned Table Number\n" +
+		"\"Track A, Track B\",answer,Submitted," + name + ",https://example.com/devpost,Imported description,99\n" +
+		"Track A,answer,Draft,Devpost Draft,https://example.com/draft,Draft description,100\n"
+	status, body := util.PostCSVRequestWithStatus(context.Logger, "/project/devpost", content, util.AdminAuth())
+	if status != 200 || !util.IsOk(body) {
+		return util.NewResult(false, fmt.Sprintf("Devpost upload failed (%d): %s", status, body))
+	}
+
+	id, result := findProjectIDByName(context, name)
+	if !result.Success {
+		return result
+	}
+	defer util.DeleteRequest(context.Logger, "/project/"+id, util.AdminAuth())
+
+	listBody := util.GetRequest(context.Logger, "/project/list", util.AdminAuth())
+	var projects []struct {
+		Name          string   `json:"name"`
+		Description   string   `json:"description"`
+		URL           string   `json:"url"`
+		ChallengeList []string `json:"challenge_list"`
+	}
+	if err := json.Unmarshal([]byte(listBody), &projects); err != nil {
+		return util.NewResult(false, "Cannot decode project list: "+err.Error())
+	}
+	for _, project := range projects {
+		if project.Name == "Devpost Draft" {
+			return util.NewResult(false, "Devpost draft was imported")
+		}
+		if project.Name == name {
+			if project.Description != "Imported description" || project.URL != "https://example.com/devpost" || !reflect.DeepEqual(project.ChallengeList, []string{"Track A", "Track B"}) {
+				return util.NewResult(false, fmt.Sprintf("Wrong imported project fields: %+v", project))
+			}
+		}
+	}
+	return util.ResultOk()
+}
+
+// DevpostCSVMissingPrizes rejects an export that cannot provide challenge lists.
+func DevpostCSVMissingPrizes(context *util.Context) util.Result {
+	content := "Project Title,Submission Url,Project Status,About The Project\n" +
+		"Missing Prizes,https://example.com,Submitted,Description\n"
+	status, body := util.PostCSVRequestWithStatus(context.Logger, "/project/devpost", content, util.AdminAuth())
+	if status != 400 {
+		return util.NewResult(false, fmt.Sprintf("Expected 400 for missing Opt-In Prizes, got %d: %s", status, body))
+	}
+	return util.ResultOk()
 }
 
 // AddAndDeleteProject verifies a project can be created and then deleted
@@ -258,7 +310,7 @@ func findProjectIDByName(context *util.Context, name string) (string, util.Resul
 }
 
 func findProjectFieldByName(body string, name string, field string) string {
-var projects []map[string]any
+	var projects []map[string]any
 	if err := json.Unmarshal([]byte(body), &projects); err != nil {
 		return ""
 	}

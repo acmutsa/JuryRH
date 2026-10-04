@@ -148,34 +148,11 @@ func ParseProjectCsv(content string, hasHeader bool, db *mongo.Database) ([]*mod
 	return projects, nil
 }
 
-// TODO: After event, devpost will add a column between 0 and 1, the "auto assigned table numbers" TT - idk what to do abt this
-// Generate a workable CSV for Jury based on the output CSV from Devpost
-// Columns:
-//  0. Project Title - title
-//  1. Submission Url - url
-//  2. Project Status - Draft or Submitted (ignore drafts)
-//  3. Judging Status - ignore
-//  4. Highest Step Completed - ignore
-//  5. Project Created At - ignore
-//  6. About The Project - description
-//  7. "Try it out" Links" - try_link
-//  8. Video Demo Link - video_link
-//  9. Opt-In Prizes - challenge_list
-//  10. Built With - ignore
-//  11. Notes - ignore
-//  12. Team Colleges/Universities - ignore
-//  13. Additional Team Member Count - ignore
-//  14. (and remiaining rows) Custom questions - custom_questions (ignore for now)
+// ParseDevpostCSV converts a Devpost Projects data export into Jury projects.
 func ParseDevpostCSV(content string, db *mongo.Database) ([]*models.Project, error) {
-	r := csv.NewReader(strings.NewReader(content))
-
-	// Empty CSV file
 	if content == "" {
 		return []*models.Project{}, nil
 	}
-
-	// Skip the first line
-	r.Read()
 
 	// Get the starting table number
 	tableNum, err := database.GetMaxTableNum(db, context.Background())
@@ -189,30 +166,64 @@ func ParseDevpostCSV(content string, db *mongo.Database) ([]*models.Project, err
 		return nil, err
 	}
 
+	return parseDevpostProjects(content, tableNum, options)
+}
+
+// Devpost's Projects data report calls challenge selections "Opt-In Prizes".
+// Resolve the fields by header so added table numbers, PII, and custom questions do not
+// shift the values imported into Jury.
+func parseDevpostProjects(content string, tableNum int64, options *models.Options) ([]*models.Project, error) {
+	r := csv.NewReader(strings.NewReader(content))
+	header, err := r.Read()
+	if err != nil {
+		return nil, fmt.Errorf("reading Devpost CSV header: %w", err)
+	}
+
+	columns := make(map[string]int, len(header))
+	for i, name := range header {
+		name = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(name, "\ufeff")))
+		if _, exists := columns[name]; exists {
+			return nil, fmt.Errorf("duplicate Devpost CSV header %q", header[i])
+		}
+		columns[name] = i
+	}
+
+	required := []string{"project title", "submission url", "project status", "about the project", "opt-in prizes"}
+	for _, name := range required {
+		if _, exists := columns[name]; !exists {
+			return nil, fmt.Errorf("missing required Devpost CSV header %q", name)
+		}
+	}
+
+	value := func(record []string, name string) string {
+		if i, exists := columns[name]; exists {
+			return record[i]
+		}
+		return ""
+	}
+
 	// Read the CSV file, looping through each record
 	var projects []*models.Project
+	row := 1
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("reading Devpost CSV row %d: %w", row+1, err)
 		}
-
-		// Make sure the record has 14 or more elements (see above)
-		if len(record) < 13 {
-			return nil, fmt.Errorf("record does not contain 14 or more elements (invalid devpost csv): '%s'", strings.Join(record, ","))
-		}
+		row++
 
 		// If the project is a Draft, skip it
-		if record[2] == "Draft" {
+		if strings.EqualFold(strings.TrimSpace(value(record, "project status")), "Draft") {
 			continue
 		}
 
 		// Split challenge list into a slice and trim them
-		challengeList := strings.Split(record[9], ",")
-		if record[9] == "" {
+		prizes := value(record, "opt-in prizes")
+		challengeList := strings.Split(prizes, ",")
+		if strings.TrimSpace(prizes) == "" {
 			challengeList = []string{}
 		}
 		for i := range challengeList {
@@ -236,13 +247,13 @@ func ParseDevpostCSV(content string, db *mongo.Database) ([]*models.Project, err
 
 		// Add project to slice
 		projects = append(projects, models.NewProject(
-			record[0],
+			value(record, "project title"),
 			tableNum,
 			util.GroupFromTable(options, tableNum),
-			record[6],
-			record[1],
-			record[7],
-			record[8],
+			value(record, "about the project"),
+			value(record, "submission url"),
+			value(record, `"try it out" links`),
+			value(record, "video demo link"),
 			challengeList,
 		))
 	}

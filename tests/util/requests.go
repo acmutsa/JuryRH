@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -123,6 +124,44 @@ func PostRequestWithStatus(logger *Logger, url string, body H, authHeader string
 	logger.Log(Verbose, "Response (%d): %s\n", res.StatusCode, string(resBody))
 
 	return res.StatusCode, string(resBody)
+}
+
+// PostCSVRequestWithStatus uploads CSV content as the csv form field.
+func PostCSVRequestWithStatus(logger *Logger, url string, content string, authHeader string) (int, string) {
+	logger.Log(Verbose, "Uploading CSV to %s\n", url)
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	file, err := writer.CreateFormFile("csv", "projects.csv")
+	if err != nil {
+		return 0, err.Error()
+	}
+	if _, err := io.WriteString(file, content); err != nil {
+		return 0, err.Error()
+	}
+	if err := writer.Close(); err != nil {
+		return 0, err.Error()
+	}
+
+	req, err := http.NewRequest("POST", getBaseUrl()+url, &body)
+	if err != nil {
+		return 0, err.Error()
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err.Error()
+	}
+	defer res.Body.Close()
+	responseBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return res.StatusCode, err.Error()
+	}
+	logger.Log(Verbose, "Response (%d): %s\n", res.StatusCode, string(responseBody))
+	return res.StatusCode, string(responseBody)
 }
 
 // PutRequest sends a PUT request and returns the response body

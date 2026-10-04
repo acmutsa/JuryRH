@@ -39,6 +39,13 @@ For hackathons that use Devpost, you may simply upload the CSV of projects expor
 
 Once you have the CSV downloaded, go back into Jury and upload the CSV. It should correctly import all projects into Jury!
 
+Jury reads the Devpost **Projects data** CSV by its column headers, so extra columns (including
+Devpost table numbers, personal information, or custom questions) and reordered columns do not
+shift the imported project fields. The export must include **Project Title**, **Submission Url**,
+**Project Status**, **About The Project**, and **Opt-In Prizes**. Jury imports **Opt-In Prizes** as
+the project's challenge list. If a required header is missing, the upload fails with an error;
+the **"Try it out" Links** and **Video Demo Link** columns are optional.
+
 :::tip
 Devpost includes projects that are still drafts (haven't been submitted), but Jury automatically ignores them when importing the CSV.
 :::
