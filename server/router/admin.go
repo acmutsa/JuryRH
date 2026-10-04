@@ -6,6 +6,7 @@ import (
 	"server/config"
 	"server/database"
 	"server/funcs"
+	"server/judging"
 	"server/models"
 	"server/util"
 
@@ -379,8 +380,12 @@ func ExportProjects(ctx *gin.Context) {
 		return
 	}
 
-	// Create the CSV
-	csvData := funcs.CreateProjectCSV(projects)
+	exportOptions, err := loadProjectExportResults(ctx, projects)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error loading judging results: " + err.Error()})
+		return
+	}
+	csvData := funcs.CreateProjectCSV(projects, exportOptions)
 
 	// Send CSV
 	state.Logger.AdminLogf("Exported projects to CSV")
@@ -400,8 +405,12 @@ func ExportProjectsByChallenge(ctx *gin.Context) {
 		return
 	}
 
-	// Create the zip file
-	zipData, err := funcs.CreateProjectChallengeZip(projects)
+	exportOptions, err := loadProjectExportResults(ctx, projects)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error loading judging results: " + err.Error()})
+		return
+	}
+	zipData, err := funcs.CreateProjectChallengeZip(projects, exportOptions)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error creating zip file: " + err.Error()})
 		return
@@ -410,6 +419,23 @@ func ExportProjectsByChallenge(ctx *gin.Context) {
 	// Send zip file
 	state.Logger.AdminLogf("Exported projects by challenge to CSV")
 	funcs.AddZipFile("projects", zipData, ctx)
+}
+
+// loadProjectExportResults loads live scores and enabled challenge nominations.
+func loadProjectExportResults(ctx *gin.Context, projects []*models.Project) (funcs.ProjectExportOptions, error) {
+	state := GetState(ctx)
+	options, err := database.GetOptions(state.Db, ctx)
+	if err != nil {
+		return funcs.ProjectExportOptions{}, err
+	}
+	if err := judging.PopulateProjectScores(state.Db, ctx, projects); err != nil {
+		return funcs.ProjectExportOptions{}, err
+	}
+	nominations, err := database.GetChallengeNominations(state.Db, ctx)
+	if err != nil {
+		return funcs.ProjectExportOptions{}, err
+	}
+	return funcs.ProjectExportOptions{Tracks: options.Tracks, Challenges: options.OptInChallenges, Nominations: nominations}, nil
 }
 
 // POST /admin/export/rankings - ExportRankings exports the rankings of each judge as a CSV

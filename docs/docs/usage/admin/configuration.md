@@ -26,7 +26,7 @@ All settings will have a description describing their functionality, but we will
 
 ### Judge Registration
 
-Use **Disable Registration** to stop new judges joining through QR codes. Judges with active sessions can continue judging. **Max Registrations Per Minute** limits requests to `POST /qr/add` per IP address, using the existing `block_reqs` and `max_requests_per_minute` settings. Registration that is blocked or exceeds the limit returns HTTP 429.
+Use **Disable Registration** to stop new judges joining through QR codes. Judges with active sessions can continue judging. **Max Registrations Per Minute** limits requests to `POST /qr/add` per IP address, using the existing `block_reqs` and `max_req_per_min` settings. Registration that is blocked or exceeds the limit returns HTTP 429.
 
 ### Judging Parameters
 
@@ -72,8 +72,12 @@ At the bottom of the settings page, there are multiple ways to reset data in Jur
 - **Delete all Judges**: This will delete all judges, judging data, and flags. It will not delete settings and projects.
 - **Drop Database**: This button will reset the database. It's pretty destructive, so obviously do not click it unless you are sure you want to COMPLETELY CLEAR Jury!!!
 
+Project CSVs include live **Score** and **Stars** totals from general judging, **Track Score**, **Track Stars**, and **Track Seen** columns for each configured track, and **Challenge Stars** for each challenge enabled in Settings. The per-challenge ZIP contains the same columns, filtered to projects entered in that challenge. Scores use the same Copeland calculation as the dashboard; challenge nominations are separate from general and track stars. A zero means no recorded total for an eligible project; a blank means the project did not enter that track or challenge.
+
 ## Challenge Stars
 
 Open **Settings → Challenge Stars** to enable star nominations for individual opt-in challenges. Challenges appear after projects with challenge entries are added. General judges see star buttons in the finish dialog only for enabled challenges that the current project entered. Each judge has a separate nomination quota per challenge (two by default). This section also shows the projects nominated and their challenge star totals; use **Refresh challenge stars** to update them.
 
 Track judges use ordered rankings and optional track stars. Challenge nominations are available during general judging.
+
+During judging, **Done → Challenge Stars** shows nominations above personal notes. The dialog refreshes eligibility when opened. It shows a reason if stars are unavailable: the judge is assigned to a track, no challenges are enabled, or the project has not entered an enabled challenge. A failed request shows a retry button. Exhausted quotas keep the challenge visible with its star disabled.

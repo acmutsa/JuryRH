@@ -343,19 +343,53 @@ func CreateJudgeRankingCSV(judges []*models.Judge) []byte {
 	return csvBuffer.Bytes()
 }
 
-// Create a CSV file from a list of projects
-func CreateProjectCSV(projects []*models.Project) []byte {
+// ProjectExportOptions selects the judging pools included in project exports.
+type ProjectExportOptions struct {
+	Tracks      []string
+	Challenges  []string
+	Nominations map[string][]database.ChallengeNomination
+}
+
+// Create a CSV file from projects with their current judging results.
+func CreateProjectCSV(projects []*models.Project, options ProjectExportOptions) []byte {
 	csvBuffer := &bytes.Buffer{}
 
 	// Create a new CSV writer
 	w := csv.NewWriter(csvBuffer)
 
 	// Write the header
-	w.Write([]string{"Name", "Table", "Description", "URL", "TryLink", "VideoLink", "ChallengeList", "Seen", "Active", "LastActivity"})
+	header := []string{"Name", "Table", "Description", "URL", "TryLink", "VideoLink", "ChallengeList", "Seen", "Active", "LastActivity", "Score", "Stars"}
+	for _, track := range options.Tracks {
+		header = append(header, "Track Score: "+track, "Track Stars: "+track, "Track Seen: "+track)
+	}
+	challengeStars := make(map[string]map[string]int)
+	for _, challenge := range options.Challenges {
+		header = append(header, "Challenge Stars: "+challenge)
+		challengeStars[challenge] = make(map[string]int)
+		for _, nomination := range options.Nominations[challenge] {
+			challengeStars[challenge][nomination.ProjectID] = nomination.Stars
+		}
+	}
+	w.Write(header)
 
 	// Write each project
 	for _, project := range projects {
-		w.Write([]string{project.Name, fmt.Sprintf("Table %d", project.Location), project.Description, project.Url, project.TryLink, project.VideoLink, strings.Join(project.ChallengeList, ","), fmt.Sprintf("%d", project.Seen), fmt.Sprintf("%t", project.Active), fmt.Sprintf("%d", project.LastActivity)})
+		row := []string{project.Name, fmt.Sprintf("Table %d", project.Location), project.Description, project.Url, project.TryLink, project.VideoLink, strings.Join(project.ChallengeList, ","), fmt.Sprintf("%d", project.Seen), fmt.Sprintf("%t", project.Active), fmt.Sprintf("%d", project.LastActivity), fmt.Sprintf("%d", project.Score), fmt.Sprintf("%d", project.Stars)}
+		for _, track := range options.Tracks {
+			if contains(project.ChallengeList, track) {
+				row = append(row, fmt.Sprintf("%d", project.TrackScores[track]), fmt.Sprintf("%d", project.TrackStars[track]), fmt.Sprintf("%d", project.TrackSeen[track]))
+			} else {
+				row = append(row, "", "", "")
+			}
+		}
+		for _, challenge := range options.Challenges {
+			if contains(project.ChallengeList, challenge) {
+				row = append(row, fmt.Sprintf("%d", challengeStars[challenge][project.Id.Hex()]))
+			} else {
+				row = append(row, "")
+			}
+		}
+		w.Write(row)
 	}
 
 	// Flush the writer
@@ -365,7 +399,7 @@ func CreateProjectCSV(projects []*models.Project) []byte {
 }
 
 // CreateProjectChallengeZip creates a zip file with a CSV for each challenge
-func CreateProjectChallengeZip(projects []*models.Project) ([]byte, error) {
+func CreateProjectChallengeZip(projects []*models.Project, options ProjectExportOptions) ([]byte, error) {
 	csvList := [][]byte{}
 
 	// Get list of challenges
@@ -388,7 +422,7 @@ func CreateProjectChallengeZip(projects []*models.Project) ([]byte, error) {
 		}
 
 		// Create CSV for the challenge
-		csv := CreateProjectCSV(currChallengeProjects)
+		csv := CreateProjectCSV(currChallengeProjects, options)
 		csvList = append(csvList, csv)
 	}
 

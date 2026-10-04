@@ -585,7 +585,10 @@ func challengeStarLimit() int {
 func GetJudgeChallenges(ctx *gin.Context) {
 	state := GetState(ctx)
 	judge := ctx.MustGet("judge").(*models.Judge)
-	result := gin.H{"challenges": []string{}, "remaining": map[string]int{}, "limit": challengeStarLimit()}
+	result := gin.H{"challenges": []string{}, "remaining": map[string]int{}, "limit": challengeStarLimit(), "message": "Challenge stars are available when judging a project."}
+	if judge.Track != "" {
+		result["message"] = "Challenge stars are available during general judging. Your stars here count for your assigned track."
+	}
 	if judge.Track == "" && judge.Current != nil {
 		options, err := database.GetOptions(state.Db, ctx)
 		if err != nil {
@@ -616,6 +619,13 @@ func GetJudgeChallenges(ctx *gin.Context) {
 		}
 		result["challenges"] = challenges
 		result["remaining"] = remaining
+		if len(options.OptInChallenges) == 0 {
+			result["message"] = "No challenges are enabled for stars. Ask an organizer to enable them in Settings → Challenge Stars."
+		} else if len(challenges) == 0 {
+			result["message"] = "This project has not entered any challenges enabled for stars."
+		} else {
+			result["message"] = ""
+		}
 	}
 	ctx.JSON(http.StatusOK, result)
 }

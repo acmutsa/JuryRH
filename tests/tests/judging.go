@@ -88,7 +88,31 @@ func ChallengeNominations(context *util.Context) util.Result {
 	if !strings.Contains(summary, "Climate") || !strings.Contains(summary, "Challenge Candidate") {
 		return util.NewResult(false, "Admin nominations summary missing projects: "+summary)
 	}
-	return util.ResultOk()
+	var candidates []struct {
+		Name string `json:"name"`
+		ID   string `json:"id"`
+	}
+	if err := json.Unmarshal([]byte(util.GetRequest(context.Logger, "/project/list", util.AdminAuth())), &candidates); err != nil {
+		return util.NewResult(false, err.Error())
+	}
+	var judged []struct {
+		ID    string   `json:"project_id"`
+		Stars []string `json:"challenge_stars"`
+	}
+	if err := json.Unmarshal([]byte(projects), &judged); err != nil {
+		return util.NewResult(false, err.Error())
+	}
+	expected := make(map[string]map[string]string)
+	for _, candidate := range candidates {
+		stars := "0"
+		for _, seen := range judged {
+			if seen.ID == candidate.ID && len(seen.Stars) > 0 {
+				stars = "1"
+			}
+		}
+		expected[candidate.Name] = map[string]string{"Score": "0", "Stars": "0", "Challenge Stars: Climate": stars}
+	}
+	return assertProjectExportRatings(context, expected)
 }
 
 // --- Judging Workflow Tests ---
@@ -613,5 +637,18 @@ func TrackRankingScores(context *util.Context) util.Result {
 			return util.NewResult(false, "Incorrect or mixed stars: "+body)
 		}
 	}
-	return util.ResultOk()
+	expected := make(map[string]map[string]string)
+	for i := range ids {
+		score := []int{2, 0, -2}[i]
+		stars := 0
+		if i == 0 {
+			stars = 1
+		}
+		expected[fmt.Sprintf("Track Ranking Project %d", i)] = map[string]string{
+			"Score": fmt.Sprint(score), "Stars": fmt.Sprint(stars),
+			"Track Score: Rank A": fmt.Sprint(2 * score), "Track Stars: Rank A": fmt.Sprint(stars), "Track Seen: Rank A": "2",
+			"Track Score: Rank B": fmt.Sprint(-score), "Track Stars: Rank B": fmt.Sprint(stars), "Track Seen: Rank B": "1",
+		}
+	}
+	return assertProjectExportRatings(context, expected)
 }

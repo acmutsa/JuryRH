@@ -175,21 +175,9 @@ func ListProjects(ctx *gin.Context) {
 		return
 	}
 
-	// Calculate the aggregated scores
-	scores, err := judging.AggregateScores(state.Db, ctx)
-	if err != nil {
+	if err := judging.PopulateProjectScores(state.Db, ctx, projects); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error calculating scores: " + err.Error()})
 		return
-	}
-
-	// Loop through all projects and add scores
-	for i, p := range projects {
-		if pScore, ok := scores[p.Id]; ok {
-			projects[i].Score = pScore.Score
-			projects[i].Stars = pScore.Stars
-			projects[i].TrackStars = pScore.TrackStars
-			projects[i].TrackScores = pScore.TrackScores
-		}
 	}
 
 	// Send OK

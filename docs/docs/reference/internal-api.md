@@ -72,8 +72,8 @@ All routes are listed in `server/router/init.go` with their respective handlers.
 | [/admin/track-views](#post-admintrack-views)           | POST   | admin | Update the min views per track               |
 | [/admin/num-groups](#post-adminnum-groups)             | POST   | admin | Sets num of groups and reassigns nums        |
 | [/admin/group-sizes](#post-admingroup-sizes)           | POST   | admin | Sets the size of groups and reassigns nums   |
-| [/admin/block-reqs](#post-adminblock-reqs)             | POST   | admin | Sets whether to block login requests         |
-| [/admin/max-reqs](#post-adminmax-reqs)                 | POST   | admin | Sets the maximum number of logins/min        |
+| [/admin/block-reqs](#post-adminblock-reqs)             | POST   | admin | Sets whether to block QR registration requests         |
+| [/admin/max-reqs](#post-adminmax-reqs)                 | POST   | admin | Sets the maximum number of QR registrations per IP/min        |
 | [/admin/export/judges](#get-adminexportjudges)         | GET    | admin | Exports judges as a CSV                      |
 | [/admin/export/projects](#get-adminexportprojects)     | GET    | admin | Exports projects as a CSV                    |
 | [/admin/export/challenges](#get-adminexportchallenges) | GET    | admin | Exports projects by challenge as ZIP of CSVs |
@@ -219,7 +219,7 @@ Get list of all judges
     {
         "id": "ObjectId",
         "token": "String",
-            "name": "String",
+        "name": "String",
         "active": "bool",
         "track": "String",
         "group": "String",
@@ -797,7 +797,7 @@ Sets the size of groups and reassigns nums
 
 ### POST /admin/block-reqs
 
-Sets whether to block login requests
+Sets whether to block QR registration requests
 
 -   **Auth**: admin
 -   **Body**: JSON
@@ -812,7 +812,7 @@ Sets whether to block login requests
 
 ### POST /admin/max-reqs
 
-Sets the maximum number of logins/min
+Sets the maximum number of QR registrations per IP/min
 
 -   **Auth**: admin
 -   **Body**: JSON
@@ -841,12 +841,16 @@ Exports projects as a CSV
 -   **Auth**: admin
 -   **Response**: CSV Blob
 
+CSV columns include general `Score` and `Stars`, `Track Score: <name>`, `Track Stars: <name>`, and `Track Seen: <name>` for configured tracks, and `Challenge Stars: <name>` for enabled opt-in challenges. Totals are calculated at download time using the dashboard aggregation. Ineligible entries are blank; eligible entries without votes are zero.
+
 ### GET /admin/export/challenges
 
 Exports projects by challenge as ZIP of CSVs
 
 -   **Auth**: admin
 -   **Response**: ZIP Blob
+
+Each CSV uses the same judging columns as the project export and includes only projects entered in its challenge.
 
 ### GET /admin/export/rankings
 
@@ -1177,7 +1181,10 @@ Finish viewing a project
 
 ### GET /judge/challenges
 
-Returns the current project's eligible opt-in challenges, remaining nominations for each, and the per-challenge limit. Requires judge authentication. Track judges receive an empty list.
+- **Auth**: judge
+- **Response**: `{ "challenges": ["name"], "remaining": { "name": 2 }, "limit": 2, "message": "" }`
+
+Returns enabled challenges entered by the current project and each remaining nomination quota. When no nominations are available, `message` explains whether the judge is assigned to a track, has no current project, no challenges are enabled, or the project did not enter an enabled challenge. Exhausted challenges remain in the list with a remaining quota of zero.
 
 ### GET /admin/challenge-nominations
 

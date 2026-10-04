@@ -60,15 +60,37 @@ const JudgeLive = () => {
     });
     const [loading, setLoading] = useState(true);
 
+    const [challengesLoading, setChallengesLoading] = useState(false);
+    const [challengesError, setChallengesError] = useState('');
+    const [challengeRefresh, setChallengeRefresh] = useState(0);
+
     useEffect(() => {
-        if (!judge?.current || judge.track !== '') return;
+        setChallengeStars([]);
+        setChallengeOptions({ challenges: [], remaining: {}, limit: 2 });
+        setChallengesError('');
+    }, [judge?.current]);
+
+    useEffect(() => {
+        if (!judge?.current || !finishPopup) return;
+        let cancelled = false;
+        setChallengesLoading(true);
+        setChallengesError('');
         async function fetchChallenges() {
             const res = await getRequest<JudgeChallengeOptions>('/judge/challenges', 'judge');
-            if (res.status !== 200) errorAlert(res);
-            else if (res.data) setChallengeOptions(res.data);
+            if (cancelled) return;
+            if (res.status !== 200 || !res.data) {
+                errorAlert(res);
+                setChallengesError('Could not load challenge stars. Retry to choose nominations.');
+            } else {
+                setChallengeOptions(res.data);
+                const eligible = res.data.challenges;
+                setChallengeStars((current) => current.filter((name) => eligible.includes(name)));
+            }
+            setChallengesLoading(false);
         }
         fetchChallenges();
-    }, [judge?.current, judge?.track]);
+        return () => { cancelled = true; };
+    }, [judge?.current, finishPopup, challengeRefresh]);
 
     useEffect(() => {
         async function fetchData() {
@@ -448,6 +470,9 @@ const JudgeLive = () => {
                     starred={starred}
                     setStarred={setStarred}
                     challenges={challengeOptions}
+                    challengesLoading={challengesLoading}
+                    challengesError={challengesError}
+                    refreshChallenges={() => setChallengeRefresh((value) => value + 1)}
                     challengeStars={challengeStars}
                     setChallengeStars={setChallengeStars}
                 />

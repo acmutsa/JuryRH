@@ -216,3 +216,19 @@ func AggregateScores(db *mongo.Database, ctx context.Context) (map[primitive.Obj
 
 	return out, nil
 }
+
+// PopulateProjectScores attaches the same live totals used by the admin dashboard.
+func PopulateProjectScores(db *mongo.Database, ctx context.Context, projects []*models.Project) error {
+	scores, err := AggregateScores(db, ctx)
+	if err != nil {
+		return err
+	}
+	for _, project := range projects {
+		score := scores[project.Id]
+		project.Score = score.Score
+		project.Stars = score.Stars
+		project.TrackScores = score.TrackScores
+		project.TrackStars = score.TrackStars
+	}
+	return nil
+}

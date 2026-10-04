@@ -67,3 +67,5 @@ It helps organizers greatly if judges rank immediately after seeing a project--o
 :::
 
 Tell judges to continue judging until judging ends or they've gone through all the projects.
+
+If challenge stars are missing, open **Done** and check the **Challenge Stars** message. Stars are available to general judges only, for challenges enabled by an organizer and entered by the current project. Failed requests offer **Retry challenge stars**. On phones, challenge stars appear above notes with large tap targets; scroll within the dialog to reach all challenges and Submit.

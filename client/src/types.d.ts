@@ -89,6 +89,7 @@ interface JudgedProject {
 }
 
 interface JudgeChallengeOptions {
+    message?: string;
     challenges: string[];
     remaining: Record<string, number>;
     limit: number;

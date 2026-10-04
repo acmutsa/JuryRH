@@ -25,7 +25,7 @@ type Options struct {
 	IgnoreTracks    []string           `bson:"ignore_tracks" json:"ignore_tracks"`       // Ignore all projects that are added with this track
 	OptInChallenges []string           `bson:"opt_in_challenges" json:"opt_in_challenges"`
 	MaxReqPerMin    int64              `bson:"max_req_per_min" json:"max_req_per_min"` // Maximum number of requests per minute
-	BlockReqs       bool               `bson:"block_reqs" json:"block_reqs"`           // Whether or not to block login requests
+	BlockReqs       bool               `bson:"block_reqs" json:"block_reqs"`           // Whether or not to block QR registration requests
 }
 
 func NewOptions() *Options {
