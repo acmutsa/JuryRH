@@ -8,11 +8,14 @@ import Loading from '../../components/Loading';
 import { getRequest, postRequest } from '../../api';
 import { errorAlert } from '../../util';
 import Ranking from '../../components/judge/dnd/Ranking';
+import Popup from '../../components/Popup';
+import ChallengePicks from '../../components/judge/ChallengePicks';
 import { Helmet } from 'react-helmet';
 
 const Judge = () => {
     const navigate = useNavigate();
     const [judge, setJudge] = useState<Judge | null>(null);
+    const [challengePicksOpen, setChallengePicksOpen] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [projCount, setProjCount] = useState(0);
     const [deliberation, setDeliberation] = useState(false);
@@ -101,6 +104,25 @@ const Judge = () => {
                     <StatBlock name="Seen" value={judge.seen_projects.length + judge.flagged.length} />
                     <StatBlock name="Total Projects" value={projCount} />
                 </div>
+                {judge.track === '' && (
+                    <Button
+                        type="outline"
+                        full
+                        className="mt-4"
+                        onClick={() => setChallengePicksOpen(true)}
+                    >
+                        My Challenge Picks
+                    </Button>
+                )}
+                {challengePicksOpen && (
+                    <Popup
+                        enabled={challengePicksOpen}
+                        setEnabled={setChallengePicksOpen}
+                        className="max-h-[90dvh] overflow-y-auto overscroll-contain"
+                    >
+                        <ChallengePicks />
+                    </Popup>
+                )}
                 <Ranking judge={judge} deliberation={deliberation} />
             </Container>
         </>

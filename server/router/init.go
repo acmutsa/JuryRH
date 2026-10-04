@@ -158,6 +158,8 @@ func NewRouter(db *mongo.Database, logger *logging.Logger) *gin.Engine {
 	judgeRouter.POST("/judge/welcome", SetJudgeReadWelcome)
 	judgeRouter.GET("/judge/projects", GetJudgeProjects)
 	judgeRouter.GET("/judge/challenges", GetJudgeChallenges)
+	judgeRouter.GET("/judge/challenge-picks", GetJudgeChallengePicks)
+	judgeRouter.PUT("/judge/challenge-picks", UpdateJudgeChallengePick)
 	judgeRouter.POST("/judge/next", GetNextJudgeProject)
 	judgeRouter.POST("/judge/skip", JudgeSkip)
 	judgeRouter.POST("/judge/finish", JudgeFinish)

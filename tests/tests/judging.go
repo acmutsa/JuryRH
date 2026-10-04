@@ -74,11 +74,79 @@ func ChallengeNominations(context *util.Context) util.Result {
 			if util.IsOk(finish) {
 				return util.NewResult(false, "Nomination exceeded challenge quota")
 			}
-			finish = util.PostRequest(context.Logger, "/judge/finish", util.H{"notes": "", "starred": false}, auth)
+
+			var prior []struct {
+				ID string `json:"project_id"`
+			}
+			if err := json.Unmarshal([]byte(util.GetRequest(context.Logger, "/judge/projects", auth)), &prior); err != nil || len(prior) == 0 {
+				return util.NewResult(false, "Could not load previous challenge picks")
+			}
+			invalid := util.PostRequest(context.Logger, "/judge/finish", util.H{"challenge_stars": []string{"Climate"}, "challenge_replacements": util.H{"Climate": "000000000000000000000000"}}, auth)
+			if util.IsOk(invalid) {
+				return util.NewResult(false, "Invalid replacement was accepted")
+			}
+			finish = util.PostRequest(context.Logger, "/judge/finish", util.H{"notes": "", "starred": false, "challenge_stars": []string{"Climate"}, "challenge_replacements": util.H{"Climate": prior[0].ID}}, auth)
 			if !util.IsOk(finish) {
-				return util.NewResult(false, "Finish without nomination failed: "+finish)
+				return util.NewResult(false, "Finish with challenge replacement failed: "+finish)
 			}
 		}
+	}
+
+	var picks struct {
+		Challenges []struct {
+			Name      string `json:"name"`
+			Remaining int    `json:"remaining"`
+			Judged    int    `json:"judged"`
+			Projects  []struct {
+				ID      string `json:"id"`
+				Starred bool   `json:"starred"`
+			} `json:"projects"`
+		} `json:"challenges"`
+	}
+	status, body := util.GetRequestWithStatus(context.Logger, "/judge/challenge-picks", auth)
+	if status != 200 || json.Unmarshal([]byte(body), &picks) != nil || len(picks.Challenges) != 1 {
+		return util.NewResult(false, "Could not review challenge picks")
+	}
+	group := picks.Challenges[0]
+	if group.Remaining != 0 || group.Judged != limit+1 {
+		return util.NewResult(false, "Replacement changed allowance or judging progress")
+	}
+	old, target := "", ""
+	for _, project := range group.Projects {
+		if project.Starred {
+			old = project.ID
+		} else {
+			target = project.ID
+		}
+	}
+	if old == "" || target == "" {
+		return util.NewResult(false, "Expected both starred and replaced picks")
+	}
+	status, _ = util.PutRequestWithStatus(context.Logger, "/judge/challenge-picks", util.H{"challenge": "Climate", "project_id": target, "starred": true}, auth)
+	if status != 400 {
+		return util.NewResult(false, "Revision exceeded quota")
+	}
+	status, _ = util.PutRequestWithStatus(context.Logger, "/judge/challenge-picks", util.H{"challenge": "Climate", "project_id": target, "replace_project_id": old, "starred": true}, auth)
+	if status != 200 {
+		return util.NewResult(false, "Could not replace a previously judged pick")
+	}
+	status, _ = util.PutRequestWithStatus(context.Logger, "/judge/challenge-picks", util.H{"challenge": "Unknown", "project_id": target, "starred": true}, auth)
+	if status != 400 {
+		return util.NewResult(false, "Disabled challenge revision was accepted")
+	}
+	status, _ = util.PutRequestWithStatus(context.Logger, "/judge/challenge-picks", util.H{"challenge": "Climate", "project_id": target, "starred": false}, util.DefaultAuth())
+	if status != 401 && status != 403 {
+		return util.NewResult(false, "Challenge revisions must require judge authentication")
+	}
+
+	locked := util.PostRequest(context.Logger, "/admin/options", util.H{"deliberation": true}, util.AdminAuth())
+	if !util.IsOk(locked) {
+		return util.NewResult(false, "Could not lock judging for revision test")
+	}
+	status, _ = util.PutRequestWithStatus(context.Logger, "/judge/challenge-picks", util.H{"challenge": "Climate", "project_id": target, "starred": false}, auth)
+	util.PostRequest(context.Logger, "/admin/options", util.H{"deliberation": false}, util.AdminAuth())
+	if status != 400 {
+		return util.NewResult(false, "Challenge picks changed during deliberation")
 	}
 	projects := util.GetRequest(context.Logger, "/judge/projects", auth)
 	if !strings.Contains(projects, "challenge_stars") {

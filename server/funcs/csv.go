@@ -358,7 +358,7 @@ func CreateProjectCSV(projects []*models.Project, options ProjectExportOptions) 
 	w := csv.NewWriter(csvBuffer)
 
 	// Write the header
-	header := []string{"Name", "Table", "Description", "URL", "TryLink", "VideoLink", "ChallengeList", "Seen", "Active", "LastActivity", "Score", "Stars"}
+	header := []string{"Name", "Table", "Score", "Stars"}
 	for _, track := range options.Tracks {
 		header = append(header, "Track Score: "+track, "Track Stars: "+track, "Track Seen: "+track)
 	}
@@ -370,11 +370,12 @@ func CreateProjectCSV(projects []*models.Project, options ProjectExportOptions) 
 			challengeStars[challenge][nomination.ProjectID] = nomination.Stars
 		}
 	}
+	header = append(header, "Seen", "Description", "URL", "TryLink", "VideoLink", "ChallengeList", "Active", "LastActivity")
 	w.Write(header)
 
 	// Write each project
 	for _, project := range projects {
-		row := []string{project.Name, fmt.Sprintf("Table %d", project.Location), project.Description, project.Url, project.TryLink, project.VideoLink, strings.Join(project.ChallengeList, ","), fmt.Sprintf("%d", project.Seen), fmt.Sprintf("%t", project.Active), fmt.Sprintf("%d", project.LastActivity), fmt.Sprintf("%d", project.Score), fmt.Sprintf("%d", project.Stars)}
+		row := []string{project.Name, fmt.Sprintf("Table %d", project.Location), fmt.Sprintf("%d", project.Score), fmt.Sprintf("%d", project.Stars)}
 		for _, track := range options.Tracks {
 			if contains(project.ChallengeList, track) {
 				row = append(row, fmt.Sprintf("%d", project.TrackScores[track]), fmt.Sprintf("%d", project.TrackStars[track]), fmt.Sprintf("%d", project.TrackSeen[track]))
@@ -389,6 +390,7 @@ func CreateProjectCSV(projects []*models.Project, options ProjectExportOptions) 
 				row = append(row, "")
 			}
 		}
+		row = append(row, fmt.Sprintf("%d", project.Seen), project.Description, project.Url, project.TryLink, project.VideoLink, strings.Join(project.ChallengeList, ","), fmt.Sprintf("%t", project.Active), fmt.Sprintf("%d", project.LastActivity))
 		w.Write(row)
 	}
 

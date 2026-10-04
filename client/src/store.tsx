@@ -252,3 +252,26 @@ export {
     useAdminTableStore,
     useGroupInfoStore,
 };
+
+interface ChallengePicksStore {
+    picks: ChallengePicks | null;
+    loading: boolean;
+    error: string;
+    fetchPicks: () => Promise<void>;
+}
+
+export const useChallengePicksStore = create<ChallengePicksStore>()((set) => ({
+    picks: null,
+    loading: false,
+    error: '',
+    fetchPicks: async () => {
+        set({ loading: true, error: '', picks: null });
+        const res = await getRequest<ChallengePicks>('/judge/challenge-picks', 'judge');
+        if (res.status !== 200 || !res.data) {
+            set({ loading: false, error: 'Could not load your picks. Please retry.' });
+            errorAlert(res);
+            return;
+        }
+        set({ picks: res.data, loading: false });
+    },
+}));

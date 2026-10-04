@@ -208,3 +208,24 @@ interface GroupInfo {
     names: string[];
     enabled: boolean;
 }
+
+interface ChallengePickProject {
+    id: string;
+    name: string;
+    location: number;
+    starred: boolean;
+}
+
+interface ChallengePickGroup {
+    name: string;
+    judged: number;
+    total: number;
+    remaining: number;
+    projects: ChallengePickProject[];
+}
+
+interface ChallengePicks {
+    challenges: ChallengePickGroup[];
+    limit: number;
+    locked: boolean;
+}

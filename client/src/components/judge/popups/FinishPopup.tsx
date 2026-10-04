@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import ChallengePicks from '../ChallengePicks';
 import Button from '../../Button';
 import Popup from '../../Popup';
 import Star from '../Star';
@@ -44,6 +46,11 @@ interface FinishPopupProps {
     /* Selected challenge nominations */
     challengeStars: string[];
 
+    /* Previous picks to replace when submitting this project. */
+    replacements: Record<string, string>;
+    /* Update queued replacements. */
+    setReplacements: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+
     /* Setter for selected challenge nominations */
     setChallengeStars: React.Dispatch<React.SetStateAction<string[]>>;
 }
@@ -52,10 +59,21 @@ interface FinishPopupProps {
  * Component to show when the user clicks the "Submit" button
  */
 const FinishPopup = (props: FinishPopupProps) => {
+    const [reviewChallenge, setReviewChallenge] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    useEffect(() => {
+        if (!props.enabled) setReviewChallenge(null);
+    }, [props.enabled]);
     if (!props.enabled) return null;
 
     const done = async () => {
-        await props.callback();
+        if (submitting) return;
+        setSubmitting(true);
+        try {
+            await props.callback();
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -105,23 +123,55 @@ const FinishPopup = (props: FinishPopupProps) => {
                             const remaining = props.challenges.remaining[challenge] ?? 0;
                             const selected = props.challengeStars.includes(challenge);
                             return (
-                                <div key={challenge} className="flex items-center gap-2 py-2 text-sm">
-                                    <Star
-                                        className="min-h-11 min-w-11 shrink-0 inline-flex items-center justify-center"
-                                        active={selected}
-                                        ariaLabel={`Star project for ${challenge}`}
-                                        disabled={!selected && remaining === 0}
-                                        setActive={() =>
-                                            props.setChallengeStars((current) =>
-                                                current.includes(challenge)
-                                                    ? current.filter((name) => name !== challenge)
-                                                    : [...current, challenge]
-                                            )
-                                        }
-                                    />
-                                    <span className="min-w-0 break-words">
-                                        {challenge} ({remaining} left of {props.challenges.limit})
-                                    </span>
+                                <div key={challenge} className="py-2 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <Star
+                                            className="min-h-11 min-w-11 shrink-0 inline-flex items-center justify-center"
+                                            active={selected}
+                                            ariaLabel={`Star project for ${challenge}`}
+                                            disabled={submitting || (!selected && remaining === 0 && !props.replacements[challenge])}
+                                            setActive={() => {
+                                                if (selected) {
+                                                    props.setReplacements((current) => {
+                                                        const next = { ...current };
+                                                        delete next[challenge];
+                                                        return next;
+                                                    });
+                                                }
+                                                props.setChallengeStars((current) =>
+                                                    current.includes(challenge)
+                                                        ? current.filter((name) => name !== challenge)
+                                                        : [...current, challenge]
+                                                );
+                                            }}
+                                        />
+                                        <span className="min-w-0 break-words">
+                                            {challenge} ({remaining} left of {props.challenges.limit})
+                                        </span>
+                                    </div>
+                                    {props.replacements[challenge] && (
+                                        <p className="text-sm text-primary">
+                                            Replacement queued. Your previous star moves when you submit.
+                                        </p>
+                                    )}
+                                    <Button
+                                        type="outline"
+                                        className="mt-1 min-h-11 text-sm"
+                                        disabled={submitting}
+                                        onClick={() => setReviewChallenge(reviewChallenge === challenge ? null : challenge)}
+                                    >
+                                        {reviewChallenge === challenge ? 'Close picks' : remaining === 0 ? 'Replace a pick' : 'Review picks'}
+                                    </Button>
+                                    {reviewChallenge === challenge && (
+                                        <ChallengePicks
+                                            challenge={challenge}
+                                            onReplace={(name, previous) => {
+                                                props.setReplacements((current) => ({ ...current, [name]: previous.id }));
+                                                props.setChallengeStars((current) => current.includes(name) ? current : [...current, name]);
+                                                setReviewChallenge(null);
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             );
                         })}
@@ -138,7 +188,7 @@ const FinishPopup = (props: FinishPopupProps) => {
             <Button
                 type="primary"
                 onClick={done}
-                disabled={props.challengesLoading}
+                disabled={props.challengesLoading || submitting}
                 className="mt-4"
             >
                 Submit

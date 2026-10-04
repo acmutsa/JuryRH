@@ -52,6 +52,7 @@ const JudgeLive = () => {
     const [paused, setPaused] = useState(false);
     const [notes, setNotes] = useState('');
     const [starred, setStarred] = useState(false);
+    const [challengeReplacements, setChallengeReplacements] = useState<Record<string, string>>({});
     const [challengeStars, setChallengeStars] = useState<string[]>([]);
     const [challengeOptions, setChallengeOptions] = useState<JudgeChallengeOptions>({
         challenges: [],
@@ -66,6 +67,7 @@ const JudgeLive = () => {
 
     useEffect(() => {
         setChallengeStars([]);
+        setChallengeReplacements({});
         setChallengeOptions({ challenges: [], remaining: {}, limit: 2 });
         setChallengesError('');
     }, [judge?.current]);
@@ -85,6 +87,11 @@ const JudgeLive = () => {
                 setChallengeOptions(res.data);
                 const eligible = res.data.challenges;
                 setChallengeStars((current) => current.filter((name) => eligible.includes(name)));
+                setChallengeReplacements((current) =>
+                    Object.fromEntries(
+                        Object.entries(current).filter(([name]) => eligible.includes(name))
+                    )
+                );
             }
             setChallengesLoading(false);
         }
@@ -299,6 +306,7 @@ const JudgeLive = () => {
             notes,
             starred,
             challenge_stars: challengeStars,
+            challenge_replacements: challengeReplacements,
         });
         if (res.status !== 200) {
             errorAlert(res);
@@ -475,6 +483,8 @@ const JudgeLive = () => {
                     refreshChallenges={() => setChallengeRefresh((value) => value + 1)}
                     challengeStars={challengeStars}
                     setChallengeStars={setChallengeStars}
+                    replacements={challengeReplacements}
+                    setReplacements={setChallengeReplacements}
                 />
                 <FlagPopup
                     enabled={flagPopup}

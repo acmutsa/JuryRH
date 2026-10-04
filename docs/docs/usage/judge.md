@@ -69,3 +69,7 @@ It helps organizers greatly if judges rank immediately after seeing a project--o
 Tell judges to continue judging until judging ends or they've gone through all the projects.
 
 If challenge stars are missing, open **Done** and check the **Challenge Stars** message. Stars are available to general judges only, for challenges enabled by an organizer and entered by the current project. Failed requests offer **Retry challenge stars**. On phones, challenge stars appear above notes with large tap targets; scroll within the dialog to reach all challenges and Submit.
+
+Use **My Challenge Picks** on the judge dashboard to review projects you have judged in each enabled challenge. Each challenge shows your star allowance and how many eligible projects you have judged. You can remove a star or use **Replace a pick** when your allowance is full. Confirming a replacement moves the star in one save; general and track stars remain separate. Picks lock when deliberation begins.
+
+While finishing a new project, use **Review picks** or **Replace a pick** under its challenge. Choose an earlier starred project and confirm the move. The replacement stays pending until you submit the current project; closing the dialog or a failed submission does not remove your saved star.

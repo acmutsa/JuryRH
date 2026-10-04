@@ -129,6 +129,9 @@ func TestProjectExportsIncludeJudgingResults(t *testing.T) {
 	}
 	records := read(CreateProjectCSV(projects, options))
 	header := records[0]
+	if strings.Join(header[:4], ",") != "Name,Table,Score,Stars" {
+		t.Fatal("judging results should be visible beside project names")
+	}
 	for _, column := range header {
 		if column == "Challenge Stars: Disabled" {
 			t.Fatal("disabled challenge exported")

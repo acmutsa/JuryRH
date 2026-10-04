@@ -2,14 +2,22 @@ import Cookies from 'universal-cookie';
 
 const BACKEND_URL = import.meta.env.VITE_JURY_URL;
 
-export async function getRequest<T>(path: string, auth: string): Promise<FetchResponse<T>> {
+export async function getRequest<T>(
+    path: string,
+    auth: string,
+    format: 'json' | 'blob' = 'json'
+): Promise<FetchResponse<T>> {
     try {
         const options: RequestInit = {
             method: 'GET',
+            cache: format === 'blob' ? 'no-store' : 'default',
             headers: createHeaders(auth, true),
         };
         const response = await fetch(`${BACKEND_URL}${path}`, options);
 
+        if (format === 'blob' && response.status === 200) {
+            return { status: response.status, error: '', data: (await response.blob()) as T };
+        }
         try {
             const data = await response.json();
             return { status: response.status, error: data.error ? data.error : '', data };

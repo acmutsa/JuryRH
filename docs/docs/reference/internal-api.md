@@ -841,7 +841,7 @@ Exports projects as a CSV
 -   **Auth**: admin
 -   **Response**: CSV Blob
 
-CSV columns include general `Score` and `Stars`, `Track Score: <name>`, `Track Stars: <name>`, and `Track Seen: <name>` for configured tracks, and `Challenge Stars: <name>` for enabled opt-in challenges. Totals are calculated at download time using the dashboard aggregation. Ineligible entries are blank; eligible entries without votes are zero.
+Judging columns follow `Name` and `Table`, before project metadata. CSV columns include general `Score` and `Stars`, `Track Score: <name>`, `Track Stars: <name>`, and `Track Seen: <name>` for configured tracks, and `Challenge Stars: <name>` for enabled opt-in challenges. Totals are calculated at download time using the dashboard aggregation. Ineligible entries are blank; eligible entries without votes are zero.
 
 ### GET /admin/export/challenges
 
@@ -1351,3 +1351,15 @@ Gets a list of all group names and if groups are enabled
     "enabled": "bool"
 }
 ```
+
+### GET `/judge/challenge-picks`
+
+Requires judge authentication. Returns `{challenges, limit, locked}`. Each enabled challenge includes `name`, `judged`, `total`, `remaining`, and `projects`: eligible projects already judged by this judge, with `id`, `name`, `location`, and `starred`. Track judges receive an empty list. `locked` is true during deliberation.
+
+### PUT `/judge/challenge-picks`
+
+Requires judge authentication. Body: `{challenge, project_id, starred, replace_project_id?}`. Adds or removes a challenge star on a previously judged project. An optional `replace_project_id` atomically releases an earlier nomination before adding the new one. Rejects unjudged or ineligible targets, disabled challenges, invalid prior picks, quota violations, track judges, and deliberation with 400. Returns `{ok: 1}` on success.
+
+`POST /judge/finish` also accepts `challenge_replacements`, a map from selected challenge name to a previously starred project ID. Releasing earlier picks and saving the current project's challenge stars happen in the same transaction. Failed submissions preserve prior nominations.
+
+Project and challenge export responses use `Cache-Control: no-store`. If a project export lacks the `Score` and `Stars` headers, the client reports that the backend serving the app needs an update/restart instead of downloading an incomplete file.

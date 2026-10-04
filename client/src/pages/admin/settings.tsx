@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createHeaders, getRequest, postRequest } from '../../api';
+import { getRequest, postRequest } from '../../api';
 import Button from '../../components/Button';
 import JuryHeader from '../../components/JuryHeader';
 import { errorAlert } from '../../util';
@@ -500,35 +500,28 @@ const AdminSettings = () => {
     };
 
     const exportCsv = async (type: string) => {
-        const res = await fetch(`${import.meta.env.VITE_JURY_URL}/admin/export/${type}`, {
-            method: 'GET',
-            headers: createHeaders('admin', false),
-        });
-
-        if (res.status !== 200) {
-            const error = 'Error exporting data: ' + res.statusText;
-            alert(error);
-            console.error(error);
+        const res = await getRequest<Blob>(`/admin/export/${type}`, 'admin', 'blob');
+        if (res.status !== 200 || !res.data) {
+            errorAlert(res);
             return;
         }
-
-        saveToFile((await res.blob()) as Blob, type, 'csv');
+        if (type === 'projects') {
+            const header = (await res.data.text()).split(/\r?\n/, 1)[0].split(',');
+            if (!header.includes('Score') || !header.includes('Stars')) {
+                alert('The server returned an older project export without judging results. Update and restart the backend serving this app, then export again.');
+                return;
+            }
+        }
+        saveToFile(res.data, type, 'csv');
     };
 
     const exportByChallenge = async () => {
-        const res = await fetch(`${import.meta.env.VITE_JURY_URL}/admin/export/challenges`, {
-            method: 'GET',
-            headers: createHeaders('admin', false),
-        });
-
-        if (res.status !== 200) {
-            const error = 'Error exporting data: ' + res.statusText;
-            alert(error);
-            console.error(error);
+        const res = await getRequest<Blob>('/admin/export/challenges', 'admin', 'blob');
+        if (res.status !== 200 || !res.data) {
+            errorAlert(res);
             return;
         }
-
-        saveToFile((await res.blob()) as Blob, 'challenge-projects', 'zip');
+        saveToFile(res.data, 'challenge-projects', 'zip');
     };
 
     const saveToFile = (blob: Blob, name: string, ext: string) => {

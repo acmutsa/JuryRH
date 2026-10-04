@@ -62,7 +62,7 @@ This section allows you to export data from Jury as a CSV. There are 4 groupings
 - **Export Rankings** - Exports only the judges and their individual rankings of projects
 - **Export by Challenges** - Exports a zip file, with each CSV file containing only the projects that submitted to a specific challenge; each CSV will be titled with that challenge name
 
-Project CSVs include live **Score** and **Stars** totals from general judging, **Track Score**, **Track Stars**, and **Track Seen** columns for each configured track, and **Challenge Stars** for each challenge enabled in Settings. The per-challenge ZIP contains the same columns, filtered to projects entered in that challenge. Scores use the same Copeland calculation as the dashboard; challenge nominations are separate from general and track stars. A zero means no recorded total for an eligible project; a blank means the project did not enter that track or challenge.
+Project CSVs put judging results immediately after Name and Table, before descriptions and links. They include live **Score** and **Stars** totals from general judging, **Track Score**, **Track Stars**, and **Track Seen** columns for each configured track, and **Challenge Stars** for each challenge enabled in Settings. The per-challenge ZIP contains the same columns, filtered to projects entered in that challenge. Scores use the same Copeland calculation as the dashboard; challenge nominations are separate from general and track stars. A zero means no recorded total for an eligible project; a blank means the project did not enter that track or challenge.
 
 ### Reset Data
 
@@ -81,3 +81,5 @@ Open **Settings → Challenge Stars** to enable star nominations for individual 
 Track judges use ordered rankings and optional track stars. Challenge nominations are available during general judging.
 
 During judging, **Done → Challenge Stars** shows nominations above personal notes. The dialog refreshes eligibility when opened. It shows a reason if stars are unavailable: the judge is assigned to a track, no challenges are enabled, or the project has not entered an enabled challenge. A failed request shows a retry button. Exhausted quotas keep the challenge visible with its star disabled.
+
+Exports fetch fresh judging results. If **Export Projects** reports an older export format, update/restart the backend serving the frontend's configured `VITE_JURY_URL`, then export again. The expected project CSV includes `Score` and `Stars`, plus the configured track and enabled challenge result columns.

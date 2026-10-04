@@ -568,9 +568,10 @@ func EditJudge(ctx *gin.Context) {
 }
 
 type JudgeScoreRequest struct {
-	Notes          string   `json:"notes"`
-	Starred        bool     `json:"starred"`
-	ChallengeStars []string `json:"challenge_stars"`
+	Notes                 string                        `json:"notes"`
+	Starred               bool                          `json:"starred"`
+	ChallengeStars        []string                      `json:"challenge_stars"`
+	ChallengeReplacements map[string]primitive.ObjectID `json:"challenge_replacements"`
 }
 
 func challengeStarLimit() int {
@@ -681,11 +682,33 @@ func JudgeFinish(ctx *gin.Context) {
 
 		// Create the judged project object
 		judgedProject := models.JudgeProjectFromProject(project, scoreReq.Notes, scoreReq.Starred)
+		for challenge, previous := range scoreReq.ChallengeReplacements {
+			selected := false
+			for _, name := range scoreReq.ChallengeStars {
+				if name == challenge {
+					selected = true
+				}
+			}
+			if !selected || currentJudge.Track != "" {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "replacement must match a selected challenge star"})
+				return errors.New("invalid challenge replacement")
+			}
+			if err := judging.RemoveChallengePick(currentJudge, challenge, previous); err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return err
+			}
+		}
 		if err := judging.ValidateChallengeStars(currentJudge, project, options.OptInChallenges, scoreReq.ChallengeStars, challengeStarLimit()); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return err
 		}
 		judgedProject.ChallengeStars = scoreReq.ChallengeStars
+		if len(scoreReq.ChallengeReplacements) > 0 {
+			if err := database.UpdateJudgeSeenProjects(state.Db, sc, currentJudge); err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error replacing challenge picks"})
+				return err
+			}
+		}
 
 		// If groups are enabled and auto switch, move the judge to the next group conditionally
 		if options.MultiGroup && options.SwitchingMode == "auto" {

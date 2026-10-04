@@ -370,6 +370,7 @@ func ExportJudges(ctx *gin.Context) {
 
 // POST /admin/export/projects - ExportProjects exports all projects to a CSV
 func ExportProjects(ctx *gin.Context) {
+	ctx.Header("Cache-Control", "no-store")
 	// Get the state from the context
 	state := GetState(ctx)
 
@@ -395,6 +396,7 @@ func ExportProjects(ctx *gin.Context) {
 // POST /admin/export/challenges - ExportProjectsByChallenge exports all projects to a zip file, with CSVs each
 // containing projects that only belong to a single challenge
 func ExportProjectsByChallenge(ctx *gin.Context) {
+	ctx.Header("Cache-Control", "no-store")
 	// Get the state from the context
 	state := GetState(ctx)
 
